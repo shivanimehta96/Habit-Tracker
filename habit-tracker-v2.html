@@ -1,0 +1,2211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Habit Tracker"/>
+<meta name="theme-color" content="#7c3aed"/>
+<title>Habit Tracker ✨</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --sat:env(safe-area-inset-top,44px);
+  --sab:env(safe-area-inset-bottom,34px);
+  --nav-h:62px;
+  --purple:#7c3aed;--purple-l:#a78bfa;--purple-ll:#ede9fe;
+  --pink:#ec4899;--blue:#3b82f6;--blue-ll:#dbeafe;
+  --green:#10b981;--green-ll:#d1fae5;
+  --yellow:#f59e0b;--yellow-ll:#fef3c7;
+  --orange:#f97316;--orange-ll:#ffedd5;
+  --teal:#14b8a6;--red:#ef4444;
+  --bg:#f8f7ff;--surface:rgba(255,255,255,.9);
+  --border:rgba(255,255,255,.95);--border2:rgba(124,58,237,.1);
+  --text:#1e1b4b;--muted:#8b7db5;
+  --r:20px;--rs:12px;--rxs:8px;
+  --shadow:0 4px 18px rgba(124,58,237,.09);
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
+  position:fixed;inset:0;display:flex;flex-direction:column;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:-1;
+  background:
+    radial-gradient(ellipse at 15% 15%,rgba(124,58,237,.12),transparent 50%),
+    radial-gradient(ellipse at 85% 8%,rgba(59,130,246,.1),transparent 45%),
+    radial-gradient(ellipse at 80% 90%,rgba(16,185,129,.09),transparent 50%),
+    #f8f7ff;
+}
+
+/* ── APP + PAGES ── */
+#app{flex:1;position:relative;overflow:hidden}
+.page{
+  position:absolute;inset:0;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+  padding-top:calc(var(--sat) + 8px);
+  padding-bottom:calc(var(--sab) + var(--nav-h) + 16px);
+  display:none;
+}
+.page.active{display:block}
+
+/* ── MODALS (slide in from right) ── */
+.modal{
+  position:fixed;inset:0;z-index:200;
+  background:var(--bg);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  transform:translateX(100%);
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+  padding-top:calc(var(--sat) + 4px);
+  padding-bottom:calc(var(--sab) + 16px);
+}
+.modal.open{transform:translateX(0)}
+.mhdr{
+  display:flex;align-items:center;gap:12px;
+  padding:8px 16px 14px;
+  position:sticky;top:0;background:var(--bg);z-index:5;
+  border-bottom:1px solid var(--border2);
+}
+.back-btn{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--surface);border:1.5px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;cursor:pointer;flex-shrink:0;
+  box-shadow:var(--shadow);
+}
+.mtitle{font-family:'Fredoka One',cursive;font-size:1.2rem}
+.msub{font-size:.7rem;color:var(--muted);font-weight:700;margin-top:1px}
+.mp{padding:14px 16px}
+
+/* ── BOTTOM SHEET ── */
+.overlay{
+  position:fixed;inset:0;background:rgba(30,27,74,.4);z-index:300;
+  display:none;align-items:flex-end;
+}
+.overlay.open{display:flex}
+.sheet{
+  background:var(--bg);border-radius:20px 20px 0 0;
+  width:100%;max-height:80vh;
+  padding:18px 16px calc(var(--sab) + 16px);
+  transform:translateY(0);overflow-y:auto;
+  animation:slideUp .28s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sh{width:36px;height:4px;background:#d1d5db;border-radius:99px;margin:0 auto 14px}
+.st{font-family:'Fredoka One',cursive;font-size:1.1rem;margin-bottom:12px}
+
+/* ── NAV ── */
+nav{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--nav-h) + var(--sab));
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1.5px solid rgba(200,190,240,.4);
+  display:flex;align-items:flex-start;justify-content:space-around;
+  padding-top:8px;z-index:100;
+}
+.nb{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:none;border:none;cursor:pointer;
+  padding:5px 18px 0;border-radius:var(--rs);
+  font-family:'Nunito',sans-serif;
+  transition:background .2s;
+}
+.ni{font-size:1.3rem;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+.nl{font-size:.58rem;font-weight:800;color:var(--muted)}
+.nb.active .nl{color:var(--purple)}
+.nb.active .ni{transform:scale(1.18)}
+.nb.active{background:var(--purple-ll)}
+
+/* ── TYPOGRAPHY ── */
+.htitle{
+  font-family:'Fredoka One',cursive;
+  font-size:clamp(1.7rem,6vw,2.6rem);
+  background:linear-gradient(135deg,#7c3aed,#ec4899,#f97316);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;line-height:1.1;
+}
+.hsub{color:var(--muted);font-size:.84rem;font-weight:700;margin-top:2px}
+.sec-label{
+  font-family:'Fredoka One',cursive;font-size:1rem;
+  color:var(--text);padding:14px 16px 6px;
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+}
+.tag{font-size:.59rem;font-weight:800;background:var(--purple);color:#fff;padding:2px 7px;border-radius:99px;font-family:'Nunito',sans-serif}
+
+/* ── CARDS ── */
+.card{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:14px;box-shadow:var(--shadow);
+  position:relative;overflow:hidden;
+}
+.cf{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:15px;box-shadow:var(--shadow);
+  margin:0 14px;
+}
+.cgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;padding:0 14px}
+.cacc{position:absolute;top:0;right:0;width:48px;height:48px;border-radius:0 var(--r) 0 48px;opacity:.12}
+.ci{font-size:1.5rem;margin-bottom:4px}
+.ct{font-family:'Fredoka One',cursive;font-size:.86rem}
+.cs{font-size:.62rem;color:var(--muted);font-weight:700;margin-top:1px}
+.clink{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:8px;padding-top:7px;border-top:1px solid var(--border2);
+  font-size:.69rem;font-weight:800;color:var(--purple);cursor:pointer;
+}
+
+/* ── TOGGLE ── */
+.trow{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.tlbl{font-size:.7rem;font-weight:800}
+.tgl{position:relative;width:42px;height:23px;cursor:pointer;flex-shrink:0}
+.tgl input{opacity:0;width:0;height:0}
+.ts{position:absolute;inset:0;background:#d1d5db;border-radius:99px;transition:background .22s}
+.ts::before{content:'';position:absolute;width:17px;height:17px;border-radius:50%;left:3px;top:3px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .22s cubic-bezier(.34,1.56,.64,1)}
+.tgl input:checked+.ts{background:var(--green)}
+.tgl input:checked+.ts::before{transform:translateX(19px)}
+
+/* ── CHECK ITEMS ── */
+.chk{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 0;border-bottom:1px solid var(--border2);
+  cursor:pointer;-webkit-user-select:none;user-select:none;
+}
+.chk:last-of-type{border-bottom:none}
+.cbox{
+  width:26px;height:26px;border-radius:8px;
+  border:2.5px solid #d1d5db;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:.82rem;
+  transition:all .18s cubic-bezier(.34,1.56,.64,1);
+}
+.cbox.on{border-color:transparent;transform:scale(1.08)}
+.ctxt{font-size:.82rem;font-weight:800;flex:1;line-height:1.3}
+.ctxt.done{text-decoration:line-through;color:var(--muted)}
+.chint{font-size:.58rem;font-weight:600;color:var(--muted);flex-shrink:0}
+
+/* ── SLEEP BUTTON ── */
+.sleep-btn{
+  width:100%;padding:11px;margin-top:8px;
+  background:linear-gradient(135deg,#4f46e5,#7c3aed);
+  color:#fff;border:none;border-radius:var(--rs);
+  font-family:'Fredoka One',cursive;font-size:.93rem;
+  cursor:pointer;box-shadow:0 4px 14px rgba(79,70,229,.28);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:all .2s;
+}
+.sleep-btn.done{background:linear-gradient(135deg,var(--green),var(--teal))}
+.sleep-btn:disabled{opacity:.38;cursor:not-allowed}
+.sleep-hint{font-size:.62rem;color:var(--muted);font-weight:600;text-align:center;margin-top:4px}
+
+/* ── PROGRESS RING ── */
+.rw{display:flex;justify-content:center;margin:8px 0 2px;position:relative}
+.rw svg{transform:rotate(-90deg)}
+.rbg{fill:none;stroke:#e8e8f4;stroke-width:7}
+.rfill{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .7s cubic-bezier(.34,1.56,.64,1)}
+.rctr{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.rpct{font-family:'Fredoka One',cursive;font-size:1.05rem;line-height:1}
+.runit{font-size:.57rem;font-weight:800;color:var(--muted)}
+
+/* ── WEEK DOTS Mon→Sun ── */
+.wdlbls{display:grid;grid-template-columns:repeat(7,1fr);font-size:.6rem;font-weight:900;color:var(--muted);text-align:center;margin-top:6px}
+.wdgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:3px}
+.wd{
+  height:28px;border-radius:7px;border:1.5px solid #e8e8f4;
+  background:transparent;font-size:.58rem;font-weight:900;color:var(--muted);
+  cursor:pointer;transition:all .16s;display:flex;align-items:center;justify-content:center;
+}
+.wd.today{border-color:var(--purple);color:var(--purple);border-width:2px}
+.wd.done{background:var(--green);border-color:var(--green);color:#fff}
+.wd.alt{background:var(--orange);border-color:var(--orange);color:#fff}
+
+/* ── PROGRESS BAR ── */
+.pbw{margin-top:8px}
+.pbtrack{height:10px;background:#e8e8f4;border-radius:99px;overflow:hidden}
+.pbfill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.34,1.56,.64,1)}
+.pblbl{display:flex;justify-content:space-between;margin-top:5px;font-size:.68rem;font-weight:800;color:var(--muted)}
+
+/* ── CALENDAR ── */
+.calhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.calnav{background:none;border:none;font-size:1.1rem;cursor:pointer;padding:5px 8px;border-radius:var(--rxs);color:var(--purple)}
+.calmlbl{font-family:'Fredoka One',cursive;font-size:.95rem}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.caldow{font-size:.57rem;font-weight:900;color:var(--muted);text-align:center;padding:2px 0}
+.calday{
+  aspect-ratio:1;border-radius:var(--rxs);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.68rem;font-weight:800;color:var(--text);
+  cursor:pointer;border:1.5px solid transparent;transition:all .14s;
+}
+.calday.today-c{border-color:var(--purple);color:var(--purple)}
+.calday.c-done{background:var(--purple);color:#fff}
+.calday.c-green{background:var(--green);color:#fff}
+.calday.c-blue{background:var(--blue);color:#fff}
+.calday.c-orange{background:var(--orange);color:#fff}
+.calday.c-red{background:var(--red);color:#fff}
+.calday.c-partial{background:var(--purple-ll);color:var(--purple)}
+.calday.c-missed{background:#fee2e2;color:var(--red)}
+.calday.c-future{opacity:.28;cursor:default}
+.calday.c-empty{cursor:default}
+.calleg{display:flex;gap:9px;flex-wrap:wrap;margin-top:8px;font-size:.62rem;font-weight:800;color:var(--muted)}
+.calleg span{display:flex;align-items:center;gap:3px}
+.calleg i{width:10px;height:10px;border-radius:3px;display:inline-block;flex-shrink:0}
+
+/* ── VIT STATS ── */
+.vstats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.vstat{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rs);padding:10px 6px;text-align:center;box-shadow:var(--shadow)}
+.vn{font-family:'Fredoka One',cursive;font-size:1.5rem}
+.vl{font-size:.59rem;font-weight:800;color:var(--muted);margin-top:1px}
+
+/* ── STREAK HERO ── */
+.streak-hero{
+  margin:12px 14px 0;
+  background:linear-gradient(135deg,#4f46e5,#7c3aed,#ec4899);
+  border-radius:var(--r);padding:16px 18px;color:#fff;
+  display:flex;align-items:center;gap:14px;
+  box-shadow:0 10px 28px rgba(79,70,229,.28);
+  position:relative;overflow:hidden;
+}
+.streak-hero::before{content:'🔥';position:absolute;right:14px;top:10px;font-size:3.5rem;opacity:.12;transform:rotate(-15deg);pointer-events:none}
+.snum{font-family:'Fredoka One',cursive;font-size:3rem;line-height:1}
+.slbl{font-size:.63rem;opacity:.9;font-weight:800;letter-spacing:.5px;margin-top:1px}
+.sinfo h3{font-family:'Fredoka One',cursive;font-size:1.1rem}
+.sinfo p{font-size:.7rem;opacity:.85;margin-top:2px;line-height:1.35}
+.sdots{display:flex;gap:4px;margin-top:6px}
+.sdot{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:.57rem;font-weight:800}
+.sdot.done{background:rgba(255,255,255,.9);color:#7c3aed}
+
+/* ── XP BAR ── */
+.xpbar{
+  margin:10px 14px 0;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:var(--rs);
+  padding:12px 15px;box-shadow:var(--shadow);
+}
+.xpr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.xplvl{font-family:'Fredoka One',cursive;font-size:.9rem;color:var(--purple)}
+.xppts{font-size:.68rem;font-weight:700;color:var(--muted)}
+.xptrack{height:10px;background:#e8e8f4;border-radius:99px;overflow:hidden}
+.xpfill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--purple),var(--pink));transition:width .6s cubic-bezier(.34,1.56,.64,1)}
+
+/* ── WEATHER ── */
+.wb{margin:10px 14px 0;background:linear-gradient(135deg,#10b981,#14b8a6);border-radius:var(--rs);padding:10px 14px;display:none;align-items:center;gap:10px}
+.wb.show{display:flex}
+.wb p{font-size:.77rem;font-weight:800;color:#ecfdf5;line-height:1.3}
+
+/* ── SEASONAL PILL ── */
+.spill{display:none;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;border-radius:99px;padding:2px 7px;font-size:.56rem;font-weight:800}
+.spill.show{display:inline-flex}
+
+/* ── STATS ── */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px}
+.sc{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:13px 12px;box-shadow:var(--shadow);text-align:center;cursor:pointer}
+.sc:active{transform:scale(.96)}
+.snum-big{font-family:'Fredoka One',cursive;font-size:1.8rem}
+.slbl2{font-size:.62rem;font-weight:800;color:var(--muted);margin-top:2px}
+
+/* ── HEATMAP ── */
+.hmgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:6px}
+.hmc{aspect-ratio:1;border-radius:3px;background:#e8e8f4;cursor:pointer}
+.hmc.l1{background:rgba(124,58,237,.22)}.hmc.l2{background:rgba(124,58,237,.5)}.hmc.l3{background:var(--purple)}
+
+/* ── BADGES ── */
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bdg{border-radius:var(--rs);padding:10px 11px;display:flex;align-items:center;gap:8px}
+.bdg.on{background:linear-gradient(135deg,var(--yellow),var(--orange));box-shadow:0 3px 10px rgba(245,158,11,.2)}
+.bdg.off{background:#f3f4f6}
+.be{font-size:1.2rem}
+.bl{font-size:.67rem;font-weight:800;line-height:1.25}
+.bdg.on .bl{color:#fff}.bdg.off .bl{color:#9ca3af}
+
+/* ── ALT CHIPS ── */
+.altrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.achip{font-size:.7rem;font-weight:800;padding:6px 10px;border-radius:99px;border:2px solid var(--border2);cursor:pointer;background:rgba(255,255,255,.7);color:var(--muted);font-family:'Nunito',sans-serif;transition:all .16s}
+.achip.on{background:var(--orange);border-color:var(--orange);color:#fff}
+
+/* ── BOOK ── */
+.book-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border2)}
+.book-item:last-child{border-bottom:none}
+.bnum{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:900;flex-shrink:0}
+.btitle{font-size:.8rem;font-weight:800;flex:1;line-height:1.3}
+.bdate{font-size:.62rem;color:var(--muted);font-weight:600;margin-top:2px}
+
+/* ── GOAL STEPPER ── */
+.grow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border2)}
+.grow:last-child{border-bottom:none}
+.glbl{font-size:.8rem;font-weight:800}
+.gsub{font-size:.62rem;color:var(--muted);font-weight:600;margin-top:1px}
+.stepper{display:flex;align-items:center;gap:8px}
+.stepbtn{width:28px;height:28px;border-radius:50%;background:var(--purple-ll);border:none;cursor:pointer;font-size:1rem;font-weight:900;color:var(--purple);display:flex;align-items:center;justify-content:center;transition:transform .14s}
+.stepbtn:active{transform:scale(.88)}
+.stepval{font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--purple);min-width:24px;text-align:center}
+
+/* ── REPORT ── */
+.rhero{background:linear-gradient(135deg,#4f46e5,#7c3aed,#ec4899);color:#fff;border-radius:var(--r);padding:16px;margin:0 14px}
+.rscore{font-family:'Fredoka One',cursive;font-size:2.7rem;line-height:1}
+.sug{background:var(--yellow-ll);border-left:4px solid var(--yellow);border-radius:0 var(--rxs) var(--rxs) 0;padding:9px 11px;margin-top:7px;font-size:.75rem;font-weight:700;line-height:1.4}
+
+/* ── EXPORT BUTTONS ── */
+.expbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border-radius:var(--rs);border:none;font-family:'Nunito',sans-serif;font-size:.84rem;font-weight:800;cursor:pointer;transition:transform .14s}
+.expbtn:active{transform:scale(.97)}
+.expbtn.dl{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;margin-bottom:8px}
+.expbtn.ul{background:linear-gradient(135deg,var(--green),var(--teal));color:#fff}
+
+/* ── INSTALL BANNER ── */
+.ibanner{margin:8px 14px 0;background:var(--purple-ll);border:1.5px solid rgba(124,58,237,.18);border-radius:var(--rs);padding:10px 13px;display:none;align-items:center;justify-content:space-between;gap:10px}
+.ibanner.show{display:flex}
+.ibanner p{font-size:.7rem;font-weight:700;color:var(--purple);line-height:1.3}
+.ibtn{background:var(--purple);color:#fff;border:none;border-radius:99px;padding:6px 12px;font-size:.68rem;font-weight:800;cursor:pointer;flex-shrink:0;font-family:'Nunito',sans-serif}
+
+/* ── CONFETTI ── */
+.cp{position:fixed;top:-10px;z-index:9999;pointer-events:none;border-radius:2px;animation:cf 2.5s ease-in forwards}
+@keyframes cf{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+@keyframes bonce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+/* ── NOTIF TOAST ── */
+.notif{
+  position:fixed;bottom:calc(var(--sab) + var(--nav-h) + 8px);
+  left:50%;transform:translateX(-50%) translateY(14px);
+  background:linear-gradient(135deg,var(--purple),var(--pink));
+  color:#fff;border-radius:var(--rs);padding:10px 20px;
+  font-size:.8rem;font-weight:800;
+  z-index:9999;opacity:0;
+  transition:all .28s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap;max-width:86vw;text-align:center;pointer-events:none;
+}
+.notif.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── UTILS ── */
+.btn-sm{background:var(--purple-ll);border:none;border-radius:99px;padding:5px 12px;font-size:.67rem;font-weight:800;color:var(--purple);cursor:pointer;font-family:'Nunito',sans-serif;flex-shrink:0}
+.btn-sm:active{transform:scale(.95)}
+.mt8{margin-top:8px}.mt10{margin-top:10px}.mt12{margin-top:12px}.mt14{margin-top:14px}
+input[type=text],select{font-family:'Nunito',sans-serif;font-size:.86rem;font-weight:700;color:var(--text);background:var(--surface);border:1.5px solid var(--border2);border-radius:var(--rs);padding:10px 12px;width:100%;outline:none}
+input[type=text]:focus,select:focus{border-color:var(--purple-l)}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:rgba(124,58,237,.2);border-radius:99px}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="notif" id="notif"></div>
+
+<!-- BOTTOM SHEET OVERLAY -->
+<div class="overlay" id="overlay" onclick="closeSheet()">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sh"></div>
+    <div id="sheetContent"></div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app">
+
+<!-- ══════════════ HOME PAGE ══════════════ -->
+<div class="page active" id="page-home">
+  <div style="padding:0 16px;text-align:center">
+    <div class="htitle">Habit Tracker</div>
+    <div class="hsub">2026 — Your Fun Companion ✨</div>
+    <div style="display:inline-block;background:var(--surface);border:2px solid var(--border);border-radius:99px;padding:4px 16px;font-size:.76rem;font-weight:800;color:var(--purple);margin-top:6px;box-shadow:var(--shadow)" id="dateChip">—</div>
+  </div>
+
+  <div class="ibanner" id="installBanner">
+    <p>📱 <b>Share → Add to Home Screen</b></p>
+    <button class="ibtn" onclick="dismissInstall()">OK!</button>
+  </div>
+
+  <!-- STREAK -->
+  <div class="streak-hero">
+    <div style="flex-shrink:0;text-align:center">
+      <div class="snum" id="streakNum">0</div>
+      <div class="slbl">DAY STREAK 🔥</div>
+    </div>
+    <div class="sinfo">
+      <h3>Keep it up!</h3>
+      <p>Complete your full night<br>routine to grow your streak</p>
+      <div class="sdots" id="streakDots"></div>
+    </div>
+  </div>
+
+  <!-- XP -->
+  <div class="xpbar">
+    <div class="xpr">
+      <span class="xplvl">🌟 Lv<span id="xpLvl">1</span> — <span id="xpName">Beginner</span></span>
+      <span class="xppts"><span id="xpCur">0</span> / <span id="xpMax">300</span> XP</span>
+    </div>
+    <div class="xptrack"><div class="xpfill" id="xpFill" style="width:0%"></div></div>
+  </div>
+
+  <!-- WEATHER -->
+  <div class="wb" id="wbanner">
+    <span style="font-size:1.3rem;flex-shrink:0">🌤️</span>
+    <p id="wmsg">Great weather — perfect for a walk! 🚶</p>
+  </div>
+
+  <!-- ☀️ MORNING VITAMINS -->
+  <div class="sec-label">☀️ Morning Vitamins <span class="tag">DAILY</span></div>
+  <div class="cgrid3">
+    <div class="card">
+      <div class="cacc" style="background:var(--yellow)"></div>
+      <div class="ci">☀️</div><div class="ct">D3</div><div class="cs">Immunity</div>
+      <div class="trow"><span class="tlbl">Taken?</span>
+        <label class="tgl"><input type="checkbox" id="tog-d3" onchange="vitToggle('d3',this.checked)"><span class="ts"></span></label>
+      </div>
+      <div class="clink" onclick="openModal('vit-d3')">History ›</div>
+    </div>
+    <div class="card">
+      <div class="cacc" style="background:var(--orange)"></div>
+      <div class="ci">💊</div><div class="ct">B12</div><div class="cs">Energy</div>
+      <div class="trow"><span class="tlbl">Taken?</span>
+        <label class="tgl"><input type="checkbox" id="tog-b12" onchange="vitToggle('b12',this.checked)"><span class="ts"></span></label>
+      </div>
+      <div class="clink" onclick="openModal('vit-b12')">History ›</div>
+    </div>
+    <div class="card">
+      <div class="cacc" style="background:var(--red)"></div>
+      <div class="ci">🩸</div><div class="ct">Iron</div><div class="cs">Blood health</div>
+      <div class="trow"><span class="tlbl">Taken?</span>
+        <label class="tgl"><input type="checkbox" id="tog-iron" onchange="vitToggle('iron',this.checked)"><span class="ts"></span></label>
+      </div>
+      <div class="clink" onclick="openModal('vit-iron')">History ›</div>
+    </div>
+  </div>
+
+  <!-- 🌙 NIGHT ROUTINE -->
+  <div class="sec-label">🌙 Night Routine <span class="tag">STREAK CORE</span>
+    <button class="btn-sm" style="margin-left:auto" onclick="openModal('night-edit')">✏️ Edit</button>
+  </div>
+  <div class="cf">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="font-size:1.45rem">🌙</span>
+      <div style="flex:1">
+        <div style="font-family:'Fredoka One',cursive;font-size:.95rem">The Routine</div>
+        <div style="font-size:.66rem;color:var(--muted);font-weight:700">All items = streak day ✅</div>
+      </div>
+      <button class="btn-sm" onclick="openModal('night-cal')">📅 History</button>
+    </div>
+    <div id="nightItems"></div>
+    <div style="margin-top:8px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <div class="cbox" id="cb-sleep" style="border-color:var(--teal)">😴</div>
+        <span class="ctxt" id="ct-sleep">Sleep before 12 AM</span>
+      </div>
+      <button class="sleep-btn" id="sleepBtn" onclick="logSleep()">
+        <span id="sleepIco">😴</span><span id="sleepTxt">I'm heading to bed!</span>
+      </button>
+      <div class="sleep-hint" id="sleepHint">Available 10:00 PM – 11:59 PM</div>
+    </div>
+    <div id="nightBadges" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px"></div>
+  </div>
+
+  <!-- 🏋️ GYM -->
+  <div class="sec-label">🏋️ Gym / Activity <span class="tag">WEEKLY</span>
+    <button class="btn-sm" style="margin-left:auto" onclick="openModal('goals-ed')">✏️ Goals</button>
+  </div>
+  <div class="cf">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="rw" style="margin:0;flex-shrink:0">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle class="rbg" cx="32" cy="32" r="26"/>
+          <circle class="rfill" id="gym-ring" cx="32" cy="32" r="26" stroke="#ef4444" stroke-dasharray="163.4" stroke-dashoffset="163.4"/>
+        </svg>
+        <div class="rctr">
+          <div class="rpct" id="gym-pct">0</div>
+          <div class="runit" id="gym-runit">/3</div>
+        </div>
+      </div>
+      <div style="flex:1">
+        <div style="font-family:'Fredoka One',cursive;font-size:.92rem">Goal: <span id="gym-goal-lbl">3×</span>/week</div>
+        <div style="font-size:.66rem;color:var(--muted);font-weight:700;margin-top:1px">Tap days to log sessions</div>
+        <div class="wdlbls"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+        <div class="wdgrid" id="gymDots"></div>
+      </div>
+    </div>
+    <button class="btn-sm mt10" style="width:100%;text-align:center" onclick="openModal('gym-cal')">📅 Monthly History</button>
+  </div>
+
+  <!-- ALT ACTIVITY -->
+  <div class="cf mt10">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <span style="font-size:1.4rem">🔄</span>
+      <div style="flex:1">
+        <div style="font-family:'Fredoka One',cursive;font-size:.9rem">Alternative Activity</div>
+        <div style="font-size:.64rem;color:var(--muted);font-weight:700">Counts toward gym · Long Walk also counts toward walks</div>
+      </div>
+      <button class="btn-sm" onclick="openModal('alt-ed')">✏️ Edit</button>
+    </div>
+    <div class="altrow" id="altChips"></div>
+  </div>
+
+  <!-- 🚶 WALKS -->
+  <div class="sec-label">🚶 Long Walks <span class="tag">WEEKLY</span> <span class="spill" id="walkPill">🌞 Summer</span></div>
+  <div class="cf">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="rw" style="margin:0;flex-shrink:0">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle class="rbg" cx="32" cy="32" r="26"/>
+          <circle class="rfill" id="walk-ring" cx="32" cy="32" r="26" stroke="#10b981" stroke-dasharray="163.4" stroke-dashoffset="163.4"/>
+        </svg>
+        <div class="rctr">
+          <div class="rpct" id="walk-pct">0</div>
+          <div class="runit" id="walk-runit">/2</div>
+        </div>
+      </div>
+      <div style="flex:1">
+        <div style="font-family:'Fredoka One',cursive;font-size:.92rem">Goal: <span id="walk-goal-lbl">2×</span>/week</div>
+        <div style="font-size:.66rem;color:var(--muted);font-weight:700;margin-top:1px">30–45 min sessions</div>
+        <div class="wdlbls"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+        <div class="wdgrid" id="walkDots"></div>
+      </div>
+    </div>
+    <button class="btn-sm mt10" style="width:100%;text-align:center" onclick="openModal('walk-cal')">📅 Monthly History</button>
+  </div>
+
+  <!-- 🏸 BADMINTON -->
+  <div class="sec-label">🏸 Badminton <span class="tag">WEEKLY</span> <span class="spill" id="badPill">🌞 Summer</span></div>
+  <div class="cf">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="rw" style="margin:0;flex-shrink:0">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle class="rbg" cx="32" cy="32" r="26"/>
+          <circle class="rfill" id="bad-ring" cx="32" cy="32" r="26" stroke="#3b82f6" stroke-dasharray="163.4" stroke-dashoffset="163.4"/>
+        </svg>
+        <div class="rctr">
+          <div class="rpct" id="bad-pct">0</div>
+          <div class="runit" id="bad-runit">/1</div>
+        </div>
+      </div>
+      <div style="flex:1">
+        <div style="font-family:'Fredoka One',cursive;font-size:.92rem">Goal: <span id="bad-goal-lbl">1×</span>/week</div>
+        <div style="font-size:.66rem;color:var(--muted);font-weight:700;margin-top:1px">Thursday or Saturday</div>
+        <div id="badPrompt" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <button class="btn-sm mt10" style="width:100%;text-align:center" onclick="openModal('bad-cal')">📅 Monthly History</button>
+  </div>
+
+  <!-- 📚 READING -->
+  <div class="sec-label">📚 Reading <span class="tag">YEARLY</span></div>
+  <div class="cf">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="font-size:1.45rem">📚</span>
+      <div style="flex:1">
+        <div style="font-family:'Fredoka One',cursive;font-size:.95rem">Reading Goal</div>
+        <div style="font-size:.66rem;color:var(--muted);font-weight:700">12 books in 2026</div>
+      </div>
+      <button class="btn-sm" onclick="openModal('books')">📖 All Books</button>
+    </div>
+    <div class="pbw">
+      <div class="pblbl"><span>Books completed</span><span id="booksLbl">0 / 12</span></div>
+      <div class="pbtrack"><div class="pbfill" id="booksBar" style="width:0%;background:linear-gradient(90deg,var(--purple),var(--pink))"></div></div>
+    </div>
+    <div style="margin-top:10px;background:var(--blue-ll);border-radius:var(--rs);padding:10px 12px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:.77rem;font-weight:800;color:var(--blue)">📖 Daily reading session</div>
+        <div style="font-size:.62rem;color:var(--muted);font-weight:600">Days read this month: <span id="readDaysLbl" style="color:var(--blue)">0</span></div>
+      </div>
+      <button id="readDayBtn" onclick="logReadDay()" style="background:var(--blue);color:#fff;border:none;border-radius:99px;padding:6px 13px;font-size:.72rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif">+ Log</button>
+    </div>
+    <div style="margin-top:8px;background:var(--purple-ll);border-radius:var(--rs);padding:10px 12px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:.77rem;font-weight:800;color:var(--purple)">🎉 Finished a book?</span>
+      <button class="btn-sm" onclick="openBookSheet()">+ Add Book</button>
+    </div>
+    <div id="bookBadges" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px"></div>
+  </div>
+
+  <div style="height:14px"></div>
+</div><!-- /home -->
+
+<!-- ══════════════ STATS PAGE ══════════════ -->
+<div class="page" id="page-stats">
+  <div style="padding:0 16px;text-align:center">
+    <div class="htitle">Stats</div>
+    <div class="hsub">Your progress at a glance 📊</div>
+  </div>
+  <div style="height:10px"></div>
+  <div class="sgrid">
+    <div class="sc"><div class="snum-big" style="color:var(--orange)">🔥<span id="st-streak">0</span></div><div class="slbl2">Day Streak</div></div>
+    <div class="sc"><div class="snum-big" style="color:var(--purple)">⚡<span id="st-xp">0</span></div><div class="slbl2">Total XP</div></div>
+    <div class="sc" onclick="openModal('gym-cal')"><div class="snum-big" style="color:#ef4444">🏋️<span id="st-gym">0</span></div><div class="slbl2">Gym Sessions</div></div>
+    <div class="sc" onclick="openModal('walk-cal')"><div class="snum-big" style="color:var(--green)">🚶<span id="st-walks">0</span></div><div class="slbl2">Walks Done</div></div>
+    <div class="sc" onclick="openModal('books')"><div class="snum-big" style="color:var(--purple)">📚<span id="st-books">0</span></div><div class="slbl2">Books Read</div></div>
+    <div class="sc" onclick="openModal('bad-cal')"><div class="snum-big" style="color:var(--blue)">🏸<span id="st-bad">0</span></div><div class="slbl2">Badminton</div></div>
+  </div>
+
+  <div class="sec-label">🗓️ Activity Heatmap <span style="font-size:.64rem;font-weight:600;color:var(--muted)">(last 28 days)</span></div>
+  <div class="cf">
+    <div style="display:flex;justify-content:space-between;font-size:.6rem;font-weight:800;color:var(--muted)"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+    <div class="hmgrid" id="heatmap"></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:7px;font-size:.6rem;font-weight:700;color:var(--muted)">
+      <div style="width:10px;height:10px;border-radius:2px;background:#e8e8f4"></div>None
+      <div style="width:10px;height:10px;border-radius:2px;background:rgba(124,58,237,.22)"></div>Some
+      <div style="width:10px;height:10px;border-radius:2px;background:rgba(124,58,237,.5)"></div>Good
+      <div style="width:10px;height:10px;border-radius:2px;background:var(--purple)"></div>Great
+    </div>
+  </div>
+
+  <div class="sec-label">📊 Monthly Report</div>
+  <div id="reportCard"></div>
+
+  <div class="sec-label">🏆 Badges</div>
+  <div class="cf"><div class="bgrid" id="allBadges"></div></div>
+
+  <div class="sec-label">💾 Data & Backup</div>
+  <div class="cf">
+    <div style="font-size:.74rem;font-weight:700;color:var(--muted);margin-bottom:10px">
+      Export saves a <b>.json</b> file to your phone's <b>Files app</b> (Downloads folder). Import restores all your data — every habit, every month.
+    </div>
+    <button class="expbtn dl" onclick="exportData()">⬇️ Export / Backup Data</button>
+    <button class="expbtn ul" onclick="document.getElementById('impFile').click()">⬆️ Import / Restore Data</button>
+    <input type="file" id="impFile" accept=".json" style="display:none" onchange="importData(event)"/>
+  </div>
+  <div style="height:14px"></div>
+</div><!-- /stats -->
+
+<!-- ══════════════ BUDDY PAGE ══════════════ -->
+<div class="page" id="page-buddy">
+  <div style="padding:0 16px;text-align:center">
+    <div class="htitle">Your Buddy</div>
+    <div class="hsub">Grows with your habits! 🌱</div>
+  </div>
+  <div style="height:10px"></div>
+  <div class="cf" style="text-align:center">
+    <div id="charEmoji" style="font-size:4rem;display:inline-block;animation:bonce 2.2s ease-in-out infinite">🥚</div>
+    <div id="charName" style="font-family:'Fredoka One',cursive;font-size:1.7rem;margin:8px 0 3px">Egg</div>
+    <div id="charDesc" style="font-size:.78rem;color:var(--muted);font-weight:600;line-height:1.4">Your journey is just beginning. Every habit counts!</div>
+    <div style="margin:14px 0">
+      <div class="xpr"><span class="xplvl">Level <span id="charLvl">1</span></span><span class="xppts"><span id="charXpTotal">0</span> XP total</span></div>
+      <div class="xptrack"><div class="xpfill" id="charFill" style="width:0%"></div></div>
+    </div>
+    <div style="font-size:.7rem;font-weight:700;color:var(--muted)" id="evoNextHint">Keep going!</div>
+  </div>
+
+  <div class="sec-label">🌟 Evolution Path</div>
+  <div class="cf">
+    <div id="evoPath" style="display:flex;align-items:center;justify-content:center;gap:2px;overflow-x:auto;padding-bottom:4px"></div>
+  </div>
+
+  <div class="sec-label">⚡ XP Guide</div>
+  <div class="cf">
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border2);font-size:.76rem;font-weight:700"><span>💊 Each vitamin taken</span><span style="color:var(--purple)">+5 XP</span></div>
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border2);font-size:.76rem;font-weight:700"><span>🌙 Night routine item checked</span><span style="color:var(--purple)">+10 XP</span></div>
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border2);font-size:.76rem;font-weight:700"><span>🔥 Full streak day</span><span style="color:var(--purple)">+20 XP</span></div>
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border2);font-size:.76rem;font-weight:700"><span>🏋️ Gym / Walk / Badminton session</span><span style="color:var(--purple)">+15 XP</span></div>
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border2);font-size:.76rem;font-weight:700"><span>🔄 Alternative activity logged</span><span style="color:var(--purple)">+15 XP</span></div>
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border2);font-size:.76rem;font-weight:700"><span>📖 Daily reading session</span><span style="color:var(--purple)">+5 XP</span></div>
+    <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:.76rem;font-weight:700"><span>📚 Book completed</span><span style="color:var(--purple)">+50 XP</span></div>
+  </div>
+
+  <div class="sec-label">🏆 My Badges</div>
+  <div class="cf"><div class="bgrid" id="buddyBadges"></div></div>
+  <div style="height:14px"></div>
+</div><!-- /buddy -->
+
+</div><!-- /app -->
+
+<!-- NAV -->
+<nav>
+  <button class="nb active" id="nav-home" onclick="navTo('home',this)"><span class="ni">🏠</span><span class="nl">Home</span></button>
+  <button class="nb" id="nav-stats" onclick="navTo('stats',this)"><span class="ni">📊</span><span class="nl">Stats</span></button>
+  <button class="nb" id="nav-buddy" onclick="navTo('buddy',this)"><span class="ni">🥚</span><span class="nl">Buddy</span></button>
+</nav>
+
+<!-- ══════════ MODALS ══════════ -->
+
+<!-- VITAMIN D3 -->
+<div class="modal" id="modal-vit-d3">
+  <div class="mhdr"><button class="back-btn" onclick="closeModal('vit-d3')">‹</button>
+    <div><div class="mtitle">☀️ Vitamin D3</div><div class="msub">Daily immunity boost</div></div></div>
+  <div class="mp">
+    <div class="vstats" id="d3-stats"></div>
+    <div style="font-family:'Fredoka One',cursive;font-size:.92rem;margin:14px 0 8px">Monthly Calendar</div>
+    <div class="calhdr" id="d3-calhdr"></div>
+    <div class="calgrid" id="d3-calgrid"></div>
+    <div class="calleg mt8"><span><i style="background:var(--green)"></i>Taken</span><span><i style="background:#fee2e2"></i>Missed</span><span><i style="background:#e8e8f4"></i>Future</span></div>
+  </div>
+</div>
+
+<!-- VITAMIN B12 -->
+<div class="modal" id="modal-vit-b12">
+  <div class="mhdr"><button class="back-btn" onclick="closeModal('vit-b12')">‹</button>
+    <div><div class="mtitle">💊 Vitamin B12</div><div class="msub">Daily energy & brain</div></div></div>
+  <div class="mp">
+    <div class="vstats" id="b12-stats"></div>
+    <div style="font-family:'Fredoka One',cursive;font-size:.92rem;margin:14px 0 8px">Monthly Calendar</div>
+    <div class="calhdr" id="b12-calhdr"></div>
+    <div class="calgrid" id="b12-calgrid"></div>
+    <div class="calleg mt8"><span><i style="background:var(--orange)"></i>Taken</span><span><i style="background:#fee2e2"></i>Missed</span></div>
+  </div>
+</div>
+
+<!-- VITAMIN IRON -->
+<div class="modal" id="modal-vit-iron">
+  <div class="mhdr"><button class="back-btn" onclick="closeModal('vit-iron')">‹</button>
+    <div><div class="mtitle">🩸 Iron</div><div class="msub">Daily blood health</div></div></div>
+  <div class="mp">
+    <div class="vstats" id="iron-stats"></div>
+    <div style="font-family:'Fredoka One',cursive;font-size:.92rem;margin:14px 0 8px">Monthly Calendar</div>
+    <div class="calhdr" id="iron-calhdr"></div>
+    <div class="calgrid" id="iron-calgrid"></div>
+    <div class="calleg mt8"><span><i style="background:var(--red)"></i>Taken</span><span><i style="background:#fee2e2"></i>Missed</span></div>
+  </div>
+</div>
+
+<!-- NIGHT HISTORY -->
+<div class="modal" id="modal-night-cal">
+  <div class="mhdr"><button class="back-btn" onclick="closeModal('night-cal')">‹</button>
+    <div><div class="mtitle">🌙 Night Routine History</div><div class="msub">Monthly calendar view</div></div></div>
+  <div class="mp">
+    <div class="calhdr" id="night-calhdr"></div>
+    <div class="calgrid" id="night-calgrid"></div>
+    <div class="calleg mt8"><span><i style="background:var(--purple)"></i>All done</span><span><i style="background:var(--purple-ll);border:1px solid var(--purple-l)"></i>Partial</span><span><i style="background:#fee2e2"></i>Missed</span></div>
+  </div>
+</div>
+
+<!-- NIGHT EDIT -->
+<div class="modal" id="modal-night-edit">
+  <div class="mhdr"><button class="back-btn" onclick="closeModal('night-edit')">‹</button>
+    <div><div class="mtitle">✏️ Edit Night Routine</div><div class="msub">Add, rename, or remove habits</div></div></div>
+  <div class="mp" id="night-edit-mp"></div>
+</div>
+
+<!-- GYM CAL -->
+<div class="modal" id="modal-gym-cal">
+  <div class="mhdr"><button class="back-btn" onclick="closeModal('gym-cal')">‹</button>
+    <div><div class="mtitle">🏋️ Gym History</div><div class="msub">Monthly & yearly view</div></div></div>
+  <div class="mp">
+    <div class="calhdr" id="gym-calhdr"></div>
+    <div class="calgrid" id="gym-calgrid"></div>
+    <div class="calleg mt8"><span><i style="background:var(--red)"></i>Gym</span><span><i style="background:var(--orange)"></i>Alt activity</span></div>
+    <div style="font-family:'Fredoka One',cursive;font-size:.92rem;margin:14px 0 4px">Yearly Overview</div>
+    <div id="gym-yeargrid"></div>
+  </div>
+</div>
+
+<!-- WALK CAL -->
+<div class="modal" id="modal-walk-cal">
+  <div class="mhdr"><button class="back-btn" onclick="closeModal('walk-cal')">‹</button>
+    <div><div class="mtitle">🚶 Walk History</div><div class="msub">Monthly & yearly view</div></div></div>
+  <div class="mp">
+    <div class="calhdr" id="walk-calhdr"></div>
+    <div class="calgrid" id="walk-calgrid"></div>
+    <div class="calleg mt8"><span><i style="background:var(--green)"></i>Walk day</span></div>
+    <div style="font-family:'Fredoka One',cursive;font-size:.92rem;margin:14px 0 4px">Yearly Overview</div>
+    <div id="walk-yeargrid"></div>
+  </div>
+</div>
+
+<!-- BAD CAL -->
+<div class="modal" id="modal-bad-cal">
+  <div class="mhdr"><button class="back-btn" onclick="closeModal('bad-cal')">‹</button>
+    <div><div class="mtitle">🏸 Badminton History</div><div class="msub">Monthly & yearly view</div></div></div>
+  <div class="mp">
+    <div class="calhdr" id="bad-calhdr"></div>
+    <div class="calgrid" id="bad-calgrid"></div>
+    <div class="calleg mt8"><span><i style="background:var(--blue)"></i>Badminton day</span></div>
+    <div style="font-family:'Fredoka One',cursive;font-size:.92rem;margin:14px 0 4px">Yearly Overview</div>
+    <div id="bad-yeargrid"></div>
+  </div>
+</div>
+
+<!-- BOOKS -->
+<div class="modal" id="modal-books">
+  <div class="mhdr"><button class="back-btn" onclick="closeModal('books')">‹</button>
+    <div><div class="mtitle">📚 My Book List</div><div class="msub">2026 Reading Goal</div></div></div>
+  <div class="mp">
+    <div class="pbw" style="margin-top:0">
+      <div class="pblbl"><span>Completed</span><span id="booksLbl2">0 / 12</span></div>
+      <div class="pbtrack"><div class="pbfill" id="booksBar2" style="width:0%;background:linear-gradient(90deg,var(--purple),var(--pink))"></div></div>
+    </div>
+    <div style="margin-top:10px;background:var(--blue-ll);border-radius:var(--rs);padding:10px 12px">
+      <div style="font-size:.75rem;font-weight:800;color:var(--blue)">📖 Days read this month: <span id="readDaysLbl2">0</span></div>
+    </div>
+    <button onclick="openBookSheet()" style="width:100%;margin-top:10px;padding:11px;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;border:none;border-radius:var(--rs);font-family:'Fredoka One',cursive;font-size:.93rem;cursor:pointer">+ Mark Book as Completed</button>
+    <div id="bookListEl" style="margin-top:14px"></div>
+  </div>
+</div>
+
+<!-- GOALS EDITOR -->
+<div class="modal" id="modal-goals-ed">
+  <div class="mhdr"><button class="back-btn" onclick="closeModal('goals-ed')">‹</button>
+    <div><div class="mtitle">✏️ Edit Goals</div><div class="msub">Adjust your weekly & yearly targets</div></div></div>
+  <div class="mp">
+    <div class="cf" style="margin:0">
+      <div class="grow"><div><div class="glbl">🏋️ Gym sessions / week</div><div class="gsub">Focus: Tue & Thu</div></div>
+        <div class="stepper"><button class="stepbtn" onclick="adjGoal('gym',-1)">−</button><div class="stepval" id="goal-gym">3</div><button class="stepbtn" onclick="adjGoal('gym',1)">+</button></div>
+      </div>
+      <div class="grow"><div><div class="glbl">🚶 Long walks / week</div><div class="gsub">30–45 min</div></div>
+        <div class="stepper"><button class="stepbtn" onclick="adjGoal('walk',-1)">−</button><div class="stepval" id="goal-walk">2</div><button class="stepbtn" onclick="adjGoal('walk',1)">+</button></div>
+      </div>
+      <div class="grow"><div><div class="glbl">🏸 Badminton / week</div><div class="gsub">Thu or Sat</div></div>
+        <div class="stepper"><button class="stepbtn" onclick="adjGoal('bad',-1)">−</button><div class="stepval" id="goal-bad">1</div><button class="stepbtn" onclick="adjGoal('bad',1)">+</button></div>
+      </div>
+      <div class="grow"><div><div class="glbl">📚 Books / year</div><div class="gsub">Annual reading goal</div></div>
+        <div class="stepper"><button class="stepbtn" onclick="adjGoal('books',-1)">−</button><div class="stepval" id="goal-books">12</div><button class="stepbtn" onclick="adjGoal('books',1)">+</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ALT EDITOR -->
+<div class="modal" id="modal-alt-ed">
+  <div class="mhdr"><button class="back-btn" onclick="closeModal('alt-ed')">‹</button>
+    <div><div class="mtitle">✏️ Alt Activities</div><div class="msub">Toggle or add activities</div></div></div>
+  <div class="mp" id="alt-ed-mp"></div>
+</div>
+
+<!-- ══════════ JAVASCRIPT ══════════ -->
+<script>
+// ────────────────────────────────────────
+// DATE CONSTANTS
+// ────────────────────────────────────────
+var NOW   = new Date();
+var TODAY = NOW.toDateString();
+var MONTH = NOW.getMonth();
+var DOW   = NOW.getDay();   // 0=Sun … 6=Sat
+var HOUR  = NOW.getHours();
+var YEAR  = NOW.getFullYear();
+var ISO   = NOW.toISOString().slice(0,10);
+
+function getMondayISO(dt) {
+  var d = new Date(dt);
+  var off = d.getDay() === 0 ? 6 : d.getDay() - 1;
+  d.setDate(d.getDate() - off);
+  d.setHours(0,0,0,0);
+  return d.toISOString().slice(0,10);
+}
+var WEEK_MON = getMondayISO(NOW);
+
+// Mon=1,Tue=2…Sun=0 in JS DOW — we store as 1,2,3,4,5,6,0
+var WDOWS = [1,2,3,4,5,6,0];
+
+// ────────────────────────────────────────
+// STATE
+// ────────────────────────────────────────
+function loadS() {
+  try { return JSON.parse(localStorage.getItem('ht2026v7') || '{}'); }
+  catch(e) { return {}; }
+}
+function saveS() {
+  try { localStorage.setItem('ht2026v7', JSON.stringify(S)); } catch(e){}
+}
+
+var S = loadS();
+
+// Ensure all required keys exist
+if (!S.today || S.today.date !== TODAY) {
+  S.today = { date:TODAY, d3:false, b12:false, iron:false, sleep:false, readToday:false };
+}
+var WEEK_DEFAULTS = { monISO:WEEK_MON, gymDays:[], walkDays:[], altUsed:[], badminton:null };
+if (!S.week || S.week.monISO !== WEEK_MON) {
+  S.week = JSON.parse(JSON.stringify(WEEK_DEFAULTS));
+}
+if (!S.totals) S.totals = { xp:0, gymTotal:0, walkTotal:0, badTotal:0, readDaysTotal:0 };
+if (!S.streak) S.streak = { count:0, lastDate:null };
+if (!S.books)  S.books  = { list:[], readDaysByMonth:{} };
+if (!S.books.list) S.books.list = [];
+if (!S.books.readDaysByMonth) S.books.readDaysByMonth = {};
+if (!S.goals)  S.goals  = { gym:3, walk:2, bad:1, books:12 };
+if (!S.history) S.history = {};
+if (!S.dismissed) S.dismissed = {};
+
+// Night habits - default to the 3 specified habits
+if (!S.nightHabits) {
+  S.nightHabits = ['brush','serum','aligners'];
+}
+if (!S.nightLabels) {
+  S.nightLabels = { brush:'Brush Teeth', serum:'Apply Hair Serum', aligners:'Wear Aligners' };
+}
+if (!S.nightIcons) {
+  S.nightIcons = { brush:'🦷', serum:'💆', aligners:'😁' };
+}
+if (!S.nightToday) S.nightToday = {};
+// Reset nightToday if new day
+if (!S.nightTodayDate || S.nightTodayDate !== TODAY) {
+  S.nightToday = {};
+  S.nightTodayDate = TODAY;
+}
+
+// Alt activities
+if (!S.altActs) {
+  S.altActs = [
+    { key:'dance',   label:'💃 Dance',      type:'gym',  on:true },
+    { key:'yoga',    label:'🧘 Yoga',       type:'gym',  on:true },
+    { key:'swim',    label:'🏊 Swim',       type:'gym',  on:true },
+    { key:'cycle',   label:'🚴 Cycling',    type:'gym',  on:true },
+    { key:'run',     label:'🏃 Running',    type:'gym',  on:true },
+    { key:'walk',    label:'🚶 Long Walk',  type:'both', on:true },
+    { key:'pickle',  label:'🏓 Pickleball', type:'gym',  on:true }
+  ];
+}
+
+// ────────────────────────────────────────
+// INIT
+// ────────────────────────────────────────
+function init() {
+  try {
+    document.getElementById('dateChip').textContent =
+      NOW.toLocaleDateString('en-CA', { weekday:'long', month:'long', day:'numeric' });
+
+    // Vitamins
+    document.getElementById('tog-d3').checked   = !!S.today.d3;
+    document.getElementById('tog-b12').checked  = !!S.today.b12;
+    document.getElementById('tog-iron').checked = !!S.today.iron;
+
+    // Night routine
+    renderNightItems();
+    setSleepCheckUI(!!S.today.sleep);
+    updateSleepBtn();
+
+    // Seasonal (May–Sep)
+    if (MONTH >= 4 && MONTH <= 8) {
+      document.getElementById('walkPill').classList.add('show');
+      document.getElementById('badPill').classList.add('show');
+    }
+
+    renderAltChips();
+    renderWeekDots('gym');
+    renderWeekDots('walk');
+    renderBadmintonPrompt();
+    updateRings();
+    updateStreak();
+    updateXP();
+    updateBooks();
+    renderReadDayBtn();
+    renderBadges();
+    saveHistoryToday();
+    checkWeather();
+    showInstallHint();
+  } catch(e) {
+    console.error('init error:', e);
+  }
+}
+
+// ────────────────────────────────────────
+// HISTORY
+// ────────────────────────────────────────
+function saveHistoryToday() {
+  if (!S.history[ISO]) S.history[ISO] = {};
+  var h = S.history[ISO];
+  h.d3   = !!S.today.d3;
+  h.b12  = !!S.today.b12;
+  h.iron = !!S.today.iron;
+  h.sleep = !!S.today.sleep;
+  h.read  = !!S.today.readToday;
+  // night
+  var nh = S.nightHabits || [];
+  var doneCnt = 0;
+  for (var i = 0; i < nh.length; i++) { if (S.nightToday[nh[i]]) doneCnt++; }
+  if (S.today.sleep) doneCnt++;
+  h.nightDone  = doneCnt;
+  h.nightTotal = nh.length + 1;
+  h.gym  = (S.week.gymDays  || []).indexOf(DOW) >= 0;
+  h.walk = (S.week.walkDays || []).indexOf(DOW) >= 0;
+  h.bad  = !!(S.week.badminton && S.week.badminton !== 'skip');
+  h.alt  = (S.week.altUsed || []).slice();
+  saveS();
+}
+
+// ────────────────────────────────────────
+// VITAMINS
+// ────────────────────────────────────────
+function vitToggle(key, val) {
+  S.today[key] = val;
+  saveHistoryToday();
+  addXP(val ? 5 : -5);
+  showNotif(val ? key.toUpperCase() + ' taken! +5 XP 💊' : key.toUpperCase() + ' unchecked');
+  checkStreak();
+  renderBadges();
+}
+
+function vitWeekStats(key) {
+  var taken = 0, missed = 0;
+  var startDow = DOW === 0 ? 6 : DOW - 1; // days since Monday
+  for (var i = 0; i <= startDow; i++) {
+    var d = new Date(NOW);
+    d.setDate(d.getDate() - startDow + i);
+    var iso = d.toISOString().slice(0,10);
+    var h = S.history[iso] || {};
+    if (h[key]) taken++; else missed++;
+  }
+  var totalEver = 0;
+  var keys = Object.keys(S.history);
+  for (var j = 0; j < keys.length; j++) {
+    if (S.history[keys[j]] && S.history[keys[j]][key]) totalEver++;
+  }
+  return { taken: taken, missed: missed, totalEver: totalEver };
+}
+
+function renderVitStats(key, containerId) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  var ws = vitWeekStats(key);
+  el.innerHTML =
+    '<div class="vstat"><div class="vn" style="color:var(--green)">' + ws.taken + '</div><div class="vl">Week taken</div></div>' +
+    '<div class="vstat"><div class="vn" style="color:var(--red)">'   + ws.missed + '</div><div class="vl">Week missed</div></div>' +
+    '<div class="vstat"><div class="vn" style="color:var(--purple)">' + ws.totalEver + '</div><div class="vl">Total ever</div></div>';
+}
+
+// ────────────────────────────────────────
+// NIGHT ROUTINE
+// ────────────────────────────────────────
+function renderNightItems() {
+  var cont = document.getElementById('nightItems');
+  if (!cont) return;
+  var nh = S.nightHabits || [];
+  var html = '';
+  for (var i = 0; i < nh.length; i++) {
+    var key = nh[i];
+    var label = (S.nightLabels && S.nightLabels[key]) ? S.nightLabels[key] : key;
+    var icon  = (S.nightIcons  && S.nightIcons[key])  ? S.nightIcons[key]  : '✅';
+    var done  = !!S.nightToday[key];
+    var hue   = strHue(key);
+    var col   = 'hsl(' + hue + ',55%,48%)';
+    html += '<div class="chk" onclick="nightCheck(\'' + key + '\')">' +
+      '<div class="cbox' + (done ? ' on' : '') + '" id="cbox-' + key + '" style="' +
+        (done ? 'background:' + col + ';border-color:' + col : 'border-color:' + col) + '">' +
+        (done ? '✓' : icon) + '</div>' +
+      '<span class="ctxt' + (done ? ' done' : '') + '" id="ctxt-' + key + '">' + label + '</span>' +
+      '</div>';
+  }
+  cont.innerHTML = html;
+}
+
+function strHue(s) {
+  var h = 0;
+  for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+  return h;
+}
+
+function nightCheck(key) {
+  S.nightToday[key] = !S.nightToday[key];
+  renderNightItems();
+  saveHistoryToday();
+  if (S.nightToday[key]) { addXP(10); showNotif('+10 XP 🌙'); }
+  checkStreak();
+  renderBadges();
+}
+
+function setSleepCheckUI(done) {
+  var cb = document.getElementById('cb-sleep');
+  var ct = document.getElementById('ct-sleep');
+  if (!cb || !ct) return;
+  if (done) {
+    cb.classList.add('on');
+    cb.style.background = 'var(--teal)';
+    cb.style.borderColor = 'var(--teal)';
+    cb.textContent = '✓';
+    ct.classList.add('done');
+  } else {
+    cb.classList.remove('on');
+    cb.style.background = '';
+    cb.style.borderColor = 'var(--teal)';
+    cb.textContent = '😴';
+    ct.classList.remove('done');
+  }
+}
+
+function updateSleepBtn() {
+  var btn  = document.getElementById('sleepBtn');
+  var hint = document.getElementById('sleepHint');
+  var ico  = document.getElementById('sleepIco');
+  var txt  = document.getElementById('sleepTxt');
+  if (!btn) return;
+  var ok = (HOUR >= 22 && HOUR < 24);
+  if (S.today.sleep) {
+    btn.classList.add('done'); btn.disabled = true;
+    if (ico) ico.textContent = '✅';
+    if (txt) txt.textContent = 'Logged — sleep well! 😴';
+    if (hint) hint.textContent = 'Great job!';
+    setSleepCheckUI(true);
+  } else if (!ok) {
+    btn.disabled = true; btn.style.opacity = '.38';
+    if (hint) hint.textContent = 'Available 10:00 PM – 11:59 PM ⏰';
+  } else {
+    btn.disabled = false; btn.style.opacity = '1';
+    if (hint) hint.textContent = 'Tap to confirm heading to bed before midnight ✅';
+  }
+}
+
+function logSleep() {
+  if (S.today.sleep) return;
+  S.today.sleep = true;
+  saveHistoryToday();
+  addXP(10);
+  showNotif('Sleep logged! +10 XP 😴');
+  updateSleepBtn();
+  checkStreak();
+  renderBadges();
+}
+
+// Night edit modal
+function renderNightEdit() {
+  var el = document.getElementById('night-edit-mp');
+  if (!el) return;
+  var nh = S.nightHabits || [];
+  var html = '<div style="font-size:.74rem;font-weight:700;color:var(--muted);margin-bottom:12px">Add, rename, or remove habits. Sleep before 12 AM is always included.</div>';
+  for (var i = 0; i < nh.length; i++) {
+    var key = nh[i];
+    var label = (S.nightLabels && S.nightLabels[key]) ? S.nightLabels[key] : key;
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border2)">' +
+      '<input type="text" id="nedit-' + key + '" value="' + label + '" style="flex:1;padding:8px 10px;font-size:.8rem"/>' +
+      '<button onclick="removeNightHabit(\'' + key + '\')" style="background:none;border:none;font-size:1rem;cursor:pointer;color:var(--red)">🗑️</button>' +
+      '</div>';
+  }
+  html += '<div style="margin-top:14px;display:flex;gap:8px">' +
+    '<input type="text" id="newHabitInp" placeholder="New habit name..." style="flex:1;padding:9px 12px;font-size:.8rem"/>' +
+    '<button onclick="addNightHabit()" style="background:var(--purple);color:#fff;border:none;border-radius:var(--rs);padding:9px 14px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:\'Nunito\',sans-serif">+ Add</button>' +
+    '</div>' +
+    '<button onclick="saveNightEdit()" style="width:100%;margin-top:10px;padding:12px;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;border:none;border-radius:var(--rs);font-family:\'Fredoka One\',cursive;font-size:.93rem;cursor:pointer">✅ Save Changes</button>';
+  el.innerHTML = html;
+}
+
+function removeNightHabit(key) {
+  S.nightHabits = (S.nightHabits || []).filter(function(k){ return k !== key; });
+  saveS();
+  renderNightEdit();
+  renderNightItems();
+}
+
+function addNightHabit() {
+  var inp = document.getElementById('newHabitInp');
+  if (!inp) return;
+  var label = inp.value.trim();
+  if (!label) { showNotif('Enter a habit name first!'); return; }
+  var key = 'h_' + Date.now();
+  S.nightHabits.push(key);
+  if (!S.nightLabels) S.nightLabels = {};
+  if (!S.nightIcons)  S.nightIcons  = {};
+  S.nightLabels[key] = label;
+  S.nightIcons[key]  = '✅';
+  inp.value = '';
+  saveS();
+  renderNightEdit();
+  renderNightItems();
+}
+
+function saveNightEdit() {
+  var nh = S.nightHabits || [];
+  for (var i = 0; i < nh.length; i++) {
+    var key = nh[i];
+    var inp = document.getElementById('nedit-' + key);
+    if (inp && S.nightLabels) S.nightLabels[key] = inp.value.trim() || key;
+  }
+  saveS();
+  renderNightItems();
+  closeModal('night-edit');
+  showNotif('Night routine saved! ✅');
+}
+
+// ────────────────────────────────────────
+// STREAK
+// ────────────────────────────────────────
+function checkStreak() {
+  var nh = S.nightHabits || [];
+  var allDone = true;
+  for (var i = 0; i < nh.length; i++) {
+    if (!S.nightToday[nh[i]]) { allDone = false; break; }
+  }
+  allDone = allDone && !!S.today.sleep;
+
+  if (allDone && S.streak.lastDate !== TODAY) {
+    var yd = new Date(NOW);
+    yd.setDate(yd.getDate() - 1);
+    if (S.streak.lastDate === yd.toDateString()) {
+      S.streak.count++;
+    } else {
+      S.streak.count = 1;
+    }
+    S.streak.lastDate = TODAY;
+    addXP(20);
+    confetti();
+    showNotif('🔥 Streak: ' + S.streak.count + ' days! +20 XP');
+    saveS();
+  }
+  updateStreak();
+}
+
+function updateStreak() {
+  var el = document.getElementById('streakNum');
+  if (el) el.textContent = S.streak.count;
+  var sel = document.getElementById('st-streak');
+  if (sel) sel.textContent = S.streak.count;
+  var dots = document.getElementById('streakDots');
+  if (!dots) return;
+  dots.innerHTML = '';
+  var lbl = ['M','T','W','T','F','S','S'];
+  for (var i = 6; i >= 0; i--) {
+    var d = document.createElement('div');
+    d.className = 'sdot' + (i < S.streak.count ? ' done' : '');
+    d.textContent = lbl[(DOW - i + 7) % 7];
+    dots.appendChild(d);
+  }
+}
+
+// ────────────────────────────────────────
+// WEEK DOTS
+// ────────────────────────────────────────
+function renderWeekDots(type) {
+  var cont = document.getElementById(type + 'Dots');
+  if (!cont) return;
+  var doneDays = S.week[type + 'Days'] || [];
+  cont.innerHTML = '';
+  var labels = ['M','T','W','T','F','S','S'];
+  for (var i = 0; i < 7; i++) {
+    var dow = WDOWS[i];
+    var isDone = doneDays.indexOf(dow) >= 0;
+    var d = document.createElement('div');
+    d.className = 'wd' +
+      (dow === DOW ? ' today' : '') +
+      (isDone ? ' done' : '');
+    d.textContent = labels[i];
+    (function(t, dw){ d.onclick = function(){ toggleDay(t, dw); }; })(type, dow);
+    cont.appendChild(d);
+  }
+}
+
+function toggleDay(type, dow) {
+  var arr = S.week[type + 'Days'] || [];
+  var idx = arr.indexOf(dow);
+  if (idx >= 0) {
+    arr.splice(idx, 1);
+    addXP(-15);
+    if (S.history[ISO]) S.history[ISO][type] = false;
+  } else {
+    arr.push(dow);
+    var totalKey = type === 'gym' ? 'gymTotal' : 'walkTotal';
+    S.totals[totalKey] = (S.totals[totalKey] || 0) + 1;
+    addXP(15);
+    showNotif((type === 'gym' ? '🏋️ Gym' : '🚶 Walk') + ' logged! +15 XP');
+    if (S.history[ISO]) S.history[ISO][type] = true;
+    checkWeeklyGoal(type);
+  }
+  S.week[type + 'Days'] = arr;
+  saveHistoryToday();
+  renderWeekDots(type);
+  updateRings();
+  renderBadges();
+  updateStatNums();
+}
+
+function checkWeeklyGoal(type) {
+  var done = type === 'gym' ? gymCount() : type === 'walk' ? walkCount() : 0;
+  var goal = S.goals[type] || 1;
+  if (done >= goal) {
+    confetti();
+    showNotif('🎉 Weekly ' + type + ' goal smashed!');
+  }
+}
+
+// ────────────────────────────────────────
+// ALT ACTIVITY
+// ────────────────────────────────────────
+function gymCount() {
+  var direct = (S.week.gymDays || []).filter(function(x){ return typeof x === 'number'; }).length;
+  var alts = (S.week.altUsed || []).filter(function(k){ return k !== 'walk'; }).length;
+  return direct + alts;
+}
+function walkCount() {
+  var direct = (S.week.walkDays || []).filter(function(x){ return typeof x === 'number'; }).length;
+  var walkAlt = (S.week.altUsed || []).indexOf('walk') >= 0 ? 1 : 0;
+  return direct + walkAlt;
+}
+
+function renderAltChips() {
+  var cont = document.getElementById('altChips');
+  if (!cont) return;
+  var acts = S.altActs || [];
+  cont.innerHTML = '';
+  for (var i = 0; i < acts.length; i++) {
+    var a = acts[i];
+    if (!a.on) continue;
+    var used = (S.week.altUsed || []).indexOf(a.key) >= 0;
+    var span = document.createElement('span');
+    span.className = 'achip' + (used ? ' on' : '');
+    span.textContent = a.label;
+    span.dataset.key  = a.key;
+    span.dataset.type = a.type;
+    (function(el){ el.onclick = function(){ selectAlt(el); }; })(span);
+    cont.appendChild(span);
+  }
+}
+
+function selectAlt(el) {
+  var key  = el.dataset.key;
+  var type = el.dataset.type;
+  var used = S.week.altUsed || [];
+  var idx  = used.indexOf(key);
+
+  if (idx >= 0) {
+    used.splice(idx, 1);
+    el.classList.remove('on');
+    addXP(-15);
+    S.week.gymDays  = (S.week.gymDays  || []).filter(function(x){ return x !== 'alt_' + key; });
+    if (type === 'both') {
+      S.week.walkDays = (S.week.walkDays || []).filter(function(x){ return x !== 'alt_walk'; });
+    }
+  } else {
+    used.push(key);
+    el.classList.add('on');
+    addXP(15);
+    showNotif('Activity logged! +15 XP 🎉');
+    if ((S.week.gymDays || []).indexOf('alt_' + key) < 0) {
+      S.week.gymDays.push('alt_' + key);
+      S.totals.gymTotal = (S.totals.gymTotal || 0) + 1;
+      checkWeeklyGoal('gym');
+    }
+    if (type === 'both' && (S.week.walkDays || []).indexOf('alt_walk') < 0) {
+      S.week.walkDays.push('alt_walk');
+      S.totals.walkTotal = (S.totals.walkTotal || 0) + 1;
+      checkWeeklyGoal('walk');
+    }
+  }
+  S.week.altUsed = used;
+  saveHistoryToday();
+  updateRings();
+  renderWeekDots('gym');
+  renderWeekDots('walk');
+  renderBadges();
+  updateStatNums();
+}
+
+function renderAltEdit() {
+  var el = document.getElementById('alt-ed-mp');
+  if (!el) return;
+  var acts = S.altActs || [];
+  var html = '<div style="font-size:.74rem;font-weight:700;color:var(--muted);margin-bottom:12px">Toggle activities on/off or add your own.</div>';
+  for (var i = 0; i < acts.length; i++) {
+    var a = acts[i];
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border2)">' +
+      '<span style="flex:1;font-size:.82rem;font-weight:800">' + a.label + '</span>' +
+      '<label class="tgl"><input type="checkbox" ' + (a.on ? 'checked' : '') + ' onchange="toggleAltAct(' + i + ',this.checked)"><span class="ts"></span></label>' +
+      '</div>';
+  }
+  html += '<div style="margin-top:14px;display:flex;gap:8px">' +
+    '<input type="text" id="newAltInp" placeholder="New activity (e.g. Hiking)..." style="flex:1;padding:9px 12px;font-size:.8rem"/>' +
+    '<button onclick="addAltAct()" style="background:var(--orange);color:#fff;border:none;border-radius:var(--rs);padding:9px 14px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:\'Nunito\',sans-serif">+ Add</button>' +
+    '</div>';
+  el.innerHTML = html;
+}
+
+function toggleAltAct(i, val) {
+  if (S.altActs && S.altActs[i]) {
+    S.altActs[i].on = val;
+    saveS();
+    renderAltChips();
+  }
+}
+
+function addAltAct() {
+  var inp = document.getElementById('newAltInp');
+  if (!inp) return;
+  var label = inp.value.trim();
+  if (!label) { showNotif('Enter an activity name!'); return; }
+  S.altActs.push({ key:'a_' + Date.now(), label:'🏃 ' + label, type:'gym', on:true });
+  inp.value = '';
+  saveS();
+  renderAltChips();
+  renderAltEdit();
+}
+
+// ────────────────────────────────────────
+// BADMINTON
+// ────────────────────────────────────────
+function renderBadmintonPrompt() {
+  var el = document.getElementById('badPrompt');
+  if (!el) return;
+  if (DOW === 4 || DOW === 6) {
+    var thu = S.week.badminton === 'thu';
+    var sat = S.week.badminton === 'sat';
+    var skip = S.week.badminton === 'skip';
+    el.innerHTML = '<div style="background:var(--yellow-ll);border:1.5px solid rgba(245,158,11,.3);border-radius:var(--rxs);padding:9px 11px;font-size:.74rem;font-weight:800;color:var(--orange)">' +
+      '🏸 Badminton day! Did you play?' +
+      '<div style="display:flex;gap:6px;margin-top:7px">' +
+      '<button onclick="selectBad(\'thu\')" style="flex:1;padding:7px;border-radius:8px;border:2px solid rgba(245,158,11,.35);font-size:.69rem;font-weight:800;cursor:pointer;font-family:\'Nunito\',sans-serif;transition:all .16s;' + (thu ? 'background:var(--orange);color:#fff;border-color:var(--orange)' : 'background:rgba(255,255,255,.7);color:var(--orange)') + '">Thursday</button>' +
+      '<button onclick="selectBad(\'sat\')" style="flex:1;padding:7px;border-radius:8px;border:2px solid rgba(245,158,11,.35);font-size:.69rem;font-weight:800;cursor:pointer;font-family:\'Nunito\',sans-serif;transition:all .16s;' + (sat ? 'background:var(--orange);color:#fff;border-color:var(--orange)' : 'background:rgba(255,255,255,.7);color:var(--orange)') + '">Saturday</button>' +
+      '<button onclick="selectBad(\'skip\')" style="flex:1;padding:7px;border-radius:8px;border:2px solid #e8e8f4;font-size:.69rem;font-weight:800;cursor:pointer;font-family:\'Nunito\',sans-serif;transition:all .16s;' + (skip ? 'background:var(--muted);color:#fff' : 'background:rgba(255,255,255,.7);color:var(--muted)') + '">Skip</button>' +
+      '</div></div>';
+  } else {
+    el.innerHTML = '<div style="font-size:.7rem;font-weight:700;color:var(--muted)">Come back Thu or Sat to log 🏸</div>';
+  }
+}
+
+function selectBad(day) {
+  S.week.badminton = day;
+  if (day !== 'skip') {
+    S.totals.badTotal = (S.totals.badTotal || 0) + 1;
+    addXP(15);
+    showNotif('🏸 Badminton logged! +15 XP');
+    confetti();
+    if (S.history[ISO]) S.history[ISO].bad = true;
+  }
+  saveHistoryToday();
+  renderBadmintonPrompt();
+  updateRings();
+  renderBadges();
+  updateStatNums();
+}
+
+// ────────────────────────────────────────
+// RINGS
+// ────────────────────────────────────────
+function updateRings() {
+  var g  = S.goals;
+  var gc = gymCount();
+  var wc = walkCount();
+  var bc = (S.week.badminton && S.week.badminton !== 'skip') ? 1 : 0;
+
+  setRing('gym-ring',  Math.min(gc, g.gym),  g.gym,  163.4);
+  setRing('walk-ring', Math.min(wc, g.walk), g.walk, 163.4);
+  setRing('bad-ring',  Math.min(bc, g.bad),  g.bad,  163.4);
+
+  var gp = document.getElementById('gym-pct');  if (gp) gp.textContent = gc;
+  var gu = document.getElementById('gym-runit'); if (gu) gu.textContent = '/' + g.gym;
+  var gg = document.getElementById('gym-goal-lbl'); if (gg) gg.textContent = g.gym + '×';
+
+  var wp = document.getElementById('walk-pct');  if (wp) wp.textContent = wc;
+  var wu = document.getElementById('walk-runit'); if (wu) wu.textContent = '/' + g.walk;
+  var wg = document.getElementById('walk-goal-lbl'); if (wg) wg.textContent = g.walk + '×';
+
+  var bp = document.getElementById('bad-pct');  if (bp) bp.textContent = bc;
+  var bu = document.getElementById('bad-runit'); if (bu) bu.textContent = '/' + g.bad;
+  var bg2 = document.getElementById('bad-goal-lbl'); if (bg2) bg2.textContent = g.bad + '×';
+}
+
+function setRing(id, val, max, circ) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var pct = max > 0 ? Math.min(val / max, 1) : 0;
+  el.style.strokeDashoffset = circ - (circ * pct);
+}
+
+// ────────────────────────────────────────
+// READING
+// ────────────────────────────────────────
+function renderReadDayBtn() {
+  var monthKey = YEAR + '-' + String(MONTH + 1).padStart(2, '0');
+  var days = (S.books.readDaysByMonth || {})[monthKey] || 0;
+  var el = document.getElementById('readDaysLbl');  if (el) el.textContent = days;
+  var el2 = document.getElementById('readDaysLbl2'); if (el2) el2.textContent = days;
+  var btn = document.getElementById('readDayBtn');
+  if (btn) {
+    if (S.today.readToday) {
+      btn.textContent = '✓ Done'; btn.disabled = true; btn.style.opacity = '.55';
+    } else {
+      btn.textContent = '+ Log'; btn.disabled = false; btn.style.opacity = '1';
+    }
+  }
+}
+
+function logReadDay() {
+  if (S.today.readToday) { showNotif('Already logged today! 📖'); return; }
+  S.today.readToday = true;
+  var monthKey = YEAR + '-' + String(MONTH + 1).padStart(2, '0');
+  if (!S.books.readDaysByMonth) S.books.readDaysByMonth = {};
+  S.books.readDaysByMonth[monthKey] = (S.books.readDaysByMonth[monthKey] || 0) + 1;
+  S.totals.readDaysTotal = (S.totals.readDaysTotal || 0) + 1;
+  if (S.history[ISO]) S.history[ISO].read = true;
+  addXP(5);
+  showNotif('📖 Reading logged! +5 XP');
+  saveHistoryToday();
+  renderReadDayBtn();
+}
+
+function openBookSheet() {
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var opts = '';
+  for (var i = 0; i < 12; i++) {
+    opts += '<option value="' + i + '"' + (i === MONTH ? ' selected' : '') + '>' + months[i] + ' ' + YEAR + '</option>';
+  }
+  openSheet(
+    '<div class="st">📚 Book Completed!</div>' +
+    '<div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:10px">Enter the title of the book you finished:</div>' +
+    '<input type="text" id="bookNameInp" placeholder="e.g. Atomic Habits" style="margin-bottom:10px"/>' +
+    '<div style="font-size:.74rem;font-weight:700;color:var(--muted);margin-bottom:6px">Month completed:</div>' +
+    '<select id="bookMonInp">' + opts + '</select>' +
+    '<button onclick="addBook()" style="width:100%;margin-top:12px;padding:12px;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;border:none;border-radius:var(--rs);font-family:\'Fredoka One\',cursive;font-size:.93rem;cursor:pointer">✅ Add to My 2026 List</button>'
+  );
+  setTimeout(function(){ var inp = document.getElementById('bookNameInp'); if(inp) inp.focus(); }, 320);
+}
+
+function addBook() {
+  var inp = document.getElementById('bookNameInp');
+  var mon = document.getElementById('bookMonInp');
+  if (!inp) return;
+  var name = inp.value.trim();
+  if (!name) { showNotif('Please enter a title!'); return; }
+  var monthIdx = mon ? parseInt(mon.value) : MONTH;
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  S.books.list.push({ name: name, date: ISO, monthIdx: monthIdx, monthStr: months[monthIdx] });
+  addXP(50);
+  confetti();
+  showNotif('📚 "' + name + '" added! +50 XP 🎉');
+  closeSheet();
+  saveS();
+  updateBooks();
+  renderBadges();
+  updateStatNums();
+  var bl = document.getElementById('bookListEl');
+  if (bl) renderBookList();
+}
+
+function updateBooks() {
+  var cnt  = (S.books.list || []).length;
+  var goal = S.goals.books || 12;
+  var pct  = Math.min((cnt / goal) * 100, 100);
+  var l1 = document.getElementById('booksLbl');  if (l1) l1.textContent = cnt + ' / ' + goal;
+  var b1 = document.getElementById('booksBar');  if (b1) b1.style.width = pct + '%';
+  var l2 = document.getElementById('booksLbl2'); if (l2) l2.textContent = cnt + ' / ' + goal;
+  var b2 = document.getElementById('booksBar2'); if (b2) b2.style.width = pct + '%';
+  var st = document.getElementById('st-books');  if (st) st.textContent = cnt;
+  renderReadDayBtn();
+}
+
+function renderBookList() {
+  var el = document.getElementById('bookListEl');
+  if (!el) return;
+  var list = S.books.list || [];
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px 0;font-size:.82rem;color:var(--muted);font-weight:700">No books yet — finish your first one! 📖</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < list.length; i++) {
+    var b = list[i];
+    html += '<div class="book-item">' +
+      '<div class="bnum">' + (i + 1) + '</div>' +
+      '<div style="flex:1"><div class="btitle">' + b.name + '</div>' +
+      '<div class="bdate">' + (b.monthStr || 'Unknown') + ' ' + YEAR + '</div></div>' +
+      '<button onclick="removeBook(' + i + ')" style="background:none;border:none;font-size:.95rem;cursor:pointer;color:var(--red)">🗑️</button>' +
+      '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function removeBook(i) {
+  S.books.list.splice(i, 1);
+  saveS(); updateBooks(); renderBookList();
+}
+
+// ────────────────────────────────────────
+// XP & LEVELS
+// ────────────────────────────────────────
+var XP_LEVELS = [
+  { l:1, n:'Beginner',   min:0,    max:300   },
+  { l:2, n:'Consistent', min:300,  max:750   },
+  { l:3, n:'Dedicated',  min:750,  max:1500  },
+  { l:4, n:'Focused',    min:1500, max:2500  },
+  { l:5, n:'Athlete',    min:2500, max:4000  },
+  { l:6, n:'Elite',      min:4000, max:6000  },
+  { l:7, n:'Champion',   min:6000, max:9000  },
+  { l:8, n:'Legend',     min:9000, max:99999 }
+];
+
+var EVOS = [
+  { min:0,    e:'🥚',  n:'Egg',       d:'Your journey is just beginning. Every habit counts!' },
+  { min:300,  e:'🐣',  n:'Hatchling', d:'Something is stirring! Keep your daily habits consistent.' },
+  { min:750,  e:'🐥',  n:'Chick',     d:"You're finding your rhythm! Streaks are building." },
+  { min:1500, e:'🐦',  n:'Bird',      d:'Taking flight! Your consistency is impressive.' },
+  { min:2500, e:'🦅',  n:'Eagle',     d:"Soaring high! You've proven real dedication." },
+  { min:4000, e:'🐯',  n:'Tiger',     d:'A force of nature! Your discipline is remarkable.' },
+  { min:6000, e:'🐉',  n:'Dragon',    d:'Legendary status! Very few reach this level.' },
+  { min:9000, e:'🌟',  n:'Star',      d:'A true lifestyle Champion — absolute top tier!' }
+];
+
+function addXP(n) {
+  var before = S.totals.xp || 0;
+  S.totals.xp = Math.max(0, before + n);
+  // Check evolution
+  var evoBefore = null, evoAfter = null;
+  for (var i = 0; i < EVOS.length; i++) { if (before >= EVOS[i].min) evoBefore = EVOS[i]; }
+  for (var j = 0; j < EVOS.length; j++) { if (S.totals.xp >= EVOS[j].min) evoAfter = EVOS[j]; }
+  if (evoAfter && evoBefore && evoAfter.min > evoBefore.min) {
+    confetti();
+    showNotif('🎉 Evolved to ' + evoAfter.n + ' ' + evoAfter.e + '!');
+  }
+  saveS();
+  updateXP();
+}
+
+function updateXP() {
+  var xp = S.totals.xp || 0;
+  var lv = XP_LEVELS[0];
+  for (var i = 0; i < XP_LEVELS.length; i++) { if (xp >= XP_LEVELS[i].min) lv = XP_LEVELS[i]; }
+  var range = lv.max - lv.min;
+  var pct = Math.min(((xp - lv.min) / range) * 100, 100);
+
+  var el; 
+  el = document.getElementById('xpLvl');  if(el) el.textContent = lv.l;
+  el = document.getElementById('xpName'); if(el) el.textContent = lv.n;
+  el = document.getElementById('xpCur');  if(el) el.textContent = xp - lv.min;
+  el = document.getElementById('xpMax');  if(el) el.textContent = range;
+  el = document.getElementById('xpFill'); if(el) el.style.width = pct + '%';
+  el = document.getElementById('st-xp');  if(el) el.textContent = xp;
+  updateChar();
+}
+
+function updateChar() {
+  var xp = S.totals.xp || 0;
+  var evo = EVOS[0];
+  for (var i = 0; i < EVOS.length; i++) { if (xp >= EVOS[i].min) evo = EVOS[i]; }
+
+  var ec = document.getElementById('charEmoji'); if (ec) ec.textContent = evo.e;
+  var cn = document.getElementById('charName');  if (cn) cn.textContent = evo.n;
+  var cd = document.getElementById('charDesc');  if (cd) cd.textContent = evo.d;
+
+  var navBuddy = document.querySelector('#nav-buddy .ni');
+  if (navBuddy) navBuddy.textContent = evo.e;
+
+  var lv = XP_LEVELS[0];
+  for (var j = 0; j < XP_LEVELS.length; j++) { if (xp >= XP_LEVELS[j].min) lv = XP_LEVELS[j]; }
+  var range = lv.max - lv.min;
+  var pct = Math.min(((xp - lv.min) / range) * 100, 100);
+
+  el = document.getElementById('charFill');    if (el) el.style.width = pct + '%';
+  el = document.getElementById('charLvl');     if (el) el.textContent = lv.l;
+  el = document.getElementById('charXpTotal'); if (el) el.textContent = xp;
+
+  var ep = document.getElementById('evoPath');
+  if (ep) {
+    var html = '';
+    for (var k = 0; k < EVOS.length; k++) {
+      if (k > 0) html += '<span style="color:#d1d5db;font-size:.68rem;flex-shrink:0">›</span>';
+      html += '<div style="text-align:center;flex:1;min-width:32px;opacity:' + (xp >= EVOS[k].min ? '1' : '.24') + '">' +
+        '<div style="font-size:1.35rem">' + EVOS[k].e + '</div>' +
+        '<div style="font-size:.44rem;font-weight:800;color:var(--muted)">' + EVOS[k].min + '</div>' +
+        '<div style="font-size:.5rem;font-weight:800">' + EVOS[k].n + '</div>' +
+        '</div>';
+    }
+    ep.innerHTML = html;
+  }
+
+  var nextEvo = null;
+  for (var m = 0; m < EVOS.length; m++) { if (xp < EVOS[m].min) { nextEvo = EVOS[m]; break; } }
+  var nh = document.getElementById('evoNextHint');
+  if (nh) {
+    nh.textContent = nextEvo
+      ? 'Next: ' + nextEvo.e + ' ' + nextEvo.n + ' at ' + nextEvo.min + ' XP (' + (nextEvo.min - xp) + ' to go)'
+      : '🌟 Max evolution reached!';
+  }
+
+  var bb = document.getElementById('buddyBadges');
+  if (bb) { bb.innerHTML = ''; for (var n = 0; n < BDEFS.length; n++) bb.appendChild(mkBdg(BDEFS[n])); }
+}
+
+// ────────────────────────────────────────
+// BADGES
+// ────────────────────────────────────────
+var BDEFS = [
+  { id:'vit3',  e:'💊', l:'All 3 Vitamins',    c: function(){ return !!S.today.d3 && !!S.today.b12 && !!S.today.iron; } },
+  { id:'big3',  e:'🌙', l:'Full Night Done',    c: function(){ var nh = S.nightHabits||[]; var ok=true; for(var i=0;i<nh.length;i++) if(!S.nightToday[nh[i]]){ok=false;break;} return ok && !!S.today.sleep; } },
+  { id:'gw',    e:'💪', l:'Gym Goal Hit',       c: function(){ return gymCount() >= (S.goals.gym||3); } },
+  { id:'ww',    e:'🚶', l:'Walk Champion',      c: function(){ return walkCount() >= (S.goals.walk||2); } },
+  { id:'bw',    e:'🏸', l:'Badminton Pro',      c: function(){ return !!(S.week.badminton && S.week.badminton !== 'skip'); } },
+  { id:'s3',    e:'🔥', l:'3-Day Streak',       c: function(){ return S.streak.count >= 3; } },
+  { id:'s7',    e:'🌟', l:'7-Day Streak',       c: function(){ return S.streak.count >= 7; } },
+  { id:'s14',   e:'🏅', l:'14-Day Streak',      c: function(){ return S.streak.count >= 14; } },
+  { id:'s30',   e:'👑', l:'30-Day Streak',      c: function(){ return S.streak.count >= 30; } },
+  { id:'b1',    e:'📚', l:'First Book',         c: function(){ return (S.books.list||[]).length >= 1; } },
+  { id:'b3',    e:'📖', l:'Bookworm',           c: function(){ return (S.books.list||[]).length >= 3; } },
+  { id:'b6',    e:'🎓', l:'Book Scholar',       c: function(){ return (S.books.list||[]).length >= 6; } },
+  { id:'b12',   e:'🏆', l:'Bookmaster',         c: function(){ return (S.books.list||[]).length >= 12; } },
+  { id:'x300',  e:'⚡', l:'300 XP',             c: function(){ return (S.totals.xp||0) >= 300; } },
+  { id:'x1500', e:'🚀', l:'1500 XP',            c: function(){ return (S.totals.xp||0) >= 1500; } },
+  { id:'x4000', e:'🔮', l:'4000 XP',            c: function(){ return (S.totals.xp||0) >= 4000; } },
+  { id:'g10',   e:'🏋️', l:'10 Gym Sessions',   c: function(){ return (S.totals.gymTotal||0) >= 10; } },
+  { id:'w10',   e:'👟', l:'10 Walks',           c: function(){ return (S.totals.walkTotal||0) >= 10; } }
+];
+
+function mkBdg(b) {
+  var on = false;
+  try { on = b.c(); } catch(e){}
+  var d = document.createElement('div');
+  d.className = 'bdg ' + (on ? 'on' : 'off');
+  d.innerHTML = '<span class="be">' + b.e + '</span><span class="bl">' + b.l + '</span>';
+  return d;
+}
+
+function renderBadges() {
+  var ab = document.getElementById('allBadges');
+  if (ab) { ab.innerHTML = ''; for (var i = 0; i < BDEFS.length; i++) ab.appendChild(mkBdg(BDEFS[i])); }
+  var nb = document.getElementById('nightBadges');
+  if (nb) {
+    nb.innerHTML = '';
+    var nids = ['big3','s3','s7','s14','s30'];
+    for (var j = 0; j < BDEFS.length; j++) {
+      if (nids.indexOf(BDEFS[j].id) >= 0) nb.appendChild(mkBdg(BDEFS[j]));
+    }
+  }
+  var bb2 = document.getElementById('bookBadges');
+  if (bb2) {
+    bb2.innerHTML = '';
+    var bids = ['b1','b3','b6','b12'];
+    for (var k = 0; k < BDEFS.length; k++) {
+      if (bids.indexOf(BDEFS[k].id) >= 0) bb2.appendChild(mkBdg(BDEFS[k]));
+    }
+  }
+}
+
+// ────────────────────────────────────────
+// GOALS EDITOR
+// ────────────────────────────────────────
+function refreshGoalEditor() {
+  var keys = ['gym','walk','bad','books'];
+  for (var i = 0; i < keys.length; i++) {
+    var el = document.getElementById('goal-' + keys[i]);
+    if (el) el.textContent = S.goals[keys[i]] || 1;
+  }
+}
+
+function adjGoal(key, delta) {
+  S.goals[key] = Math.max(1, (S.goals[key] || 1) + delta);
+  var el = document.getElementById('goal-' + key);
+  if (el) el.textContent = S.goals[key];
+  saveS();
+  updateRings();
+  updateBooks();
+  showNotif(key + ' goal → ' + S.goals[key] + '×');
+}
+
+// ────────────────────────────────────────
+// STATS
+// ────────────────────────────────────────
+function updateStatNums() {
+  var el;
+  el = document.getElementById('st-streak'); if(el) el.textContent = S.streak.count;
+  el = document.getElementById('st-xp');     if(el) el.textContent = S.totals.xp || 0;
+  el = document.getElementById('st-gym');    if(el) el.textContent = S.totals.gymTotal || 0;
+  el = document.getElementById('st-walks');  if(el) el.textContent = S.totals.walkTotal || 0;
+  el = document.getElementById('st-books');  if(el) el.textContent = (S.books.list||[]).length;
+  el = document.getElementById('st-bad');    if(el) el.textContent = S.totals.badTotal || 0;
+}
+
+function renderHeatmap() {
+  var el = document.getElementById('heatmap');
+  if (!el) return;
+  el.innerHTML = '';
+  for (var i = 27; i >= 0; i--) {
+    var d = new Date(NOW); d.setDate(d.getDate() - i);
+    var iso = d.toISOString().slice(0,10);
+    var h = S.history[iso] || {};
+    var cnt = [h.d3,h.b12,h.iron,h.sleep,h.gym,h.walk,h.bad,h.read].filter(Boolean).length;
+    var c = document.createElement('div');
+    c.className = 'hmc' + (cnt >= 7 ? ' l3' : cnt >= 4 ? ' l2' : cnt >= 1 ? ' l1' : '');
+    c.title = iso + ': ' + cnt + ' habit' + (cnt !== 1 ? 's' : '');
+    (function(n, dt){ c.onclick = function(){ showNotif(dt + ': ' + n + ' habit' + (n!==1?'s':'') + ' done'); }; })(cnt, iso);
+    el.appendChild(c);
+  }
+}
+
+// ────────────────────────────────────────
+// MONTHLY REPORT
+// ────────────────────────────────────────
+function renderReport() {
+  var el = document.getElementById('reportCard');
+  if (!el) return;
+  var daysPassed = NOW.getDate();
+  var daysInMonth = new Date(YEAR, MONTH + 1, 0).getDate();
+  var weeksInMonth = Math.ceil(daysInMonth / 7);
+  var monthName = NOW.toLocaleDateString('en-CA', { month:'long', year:'numeric' });
+
+  var vitDays=0, nightDays=0, gymC=0, walkC=0, badC=0, readC=0;
+  for (var d = 1; d <= daysPassed; d++) {
+    var iso = YEAR + '-' + String(MONTH+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    var h = S.history[iso] || {};
+    if (h.d3 && h.b12 && h.iron) vitDays++;
+    if (h.nightDone >= h.nightTotal && h.nightTotal > 0) nightDays++;
+    if (h.gym || (h.alt && h.alt.length > 0)) gymC++;
+    if (h.walk || (h.alt && h.alt.indexOf('walk') >= 0)) walkC++;
+    if (h.bad) badC++;
+    if (h.read) readC++;
+  }
+  var booksMonth = (S.books.list||[]).filter(function(b){ return b.monthIdx === MONTH; }).length;
+
+  var items = [
+    { lbl:'All vitamins taken',   val:vitDays,   target:daysPassed },
+    { lbl:'Night routine done',   val:nightDays,  target:daysPassed },
+    { lbl:'Gym sessions',         val:gymC,       target:S.goals.gym * weeksInMonth },
+    { lbl:'Long walks',           val:walkC,      target:S.goals.walk * weeksInMonth },
+    { lbl:'Badminton',            val:badC,       target:S.goals.bad * weeksInMonth },
+    { lbl:'Reading days',         val:readC,      target:daysPassed },
+    { lbl:'Books completed',      val:booksMonth, target:1 }
+  ];
+
+  var totalPct = 0;
+  for (var i = 0; i < items.length; i++) {
+    totalPct += items[i].target > 0 ? Math.min(items[i].val / items[i].target, 1) : 0;
+  }
+  totalPct = (totalPct / items.length) * 100;
+
+  var grade = totalPct>=90?'🏆 Outstanding!':totalPct>=75?'⭐ Great job!':totalPct>=55?'👍 Good progress':totalPct>=35?'💪 Building momentum':'🌱 Keep going!';
+
+  var sugs = [];
+  if (daysPassed >= 5 && vitDays / daysPassed < .8) sugs.push('💊 Set a morning alarm for vitamins — consistency makes it automatic.');
+  if (daysPassed >= 5 && nightDays / daysPassed < .7) sugs.push('🌙 Start your night routine 30 min earlier to get everything done.');
+  if (gymC < S.goals.gym * Math.floor(daysPassed/7) * .7) sugs.push('🏋️ Try scheduling gym days in your calendar like appointments.');
+  if (walkC < S.goals.walk * Math.floor(daysPassed/7) * .7) sugs.push('🚶 A post-meal walk is an easy way to hit your walk goal.');
+  if (readC < daysPassed * .4) sugs.push('📖 Even 15 min of reading before bed adds up — log it daily!');
+  if (booksMonth < 1 && daysPassed > 20) sugs.push('📚 You can still finish a book this month!');
+  if (sugs.length === 0) sugs.push('🔥 You\'re absolutely crushing it! Keep the momentum going!');
+
+  var itemsHtml = '';
+  for (var k = 0; k < items.length; k++) {
+    var it = items[k];
+    var pct = it.target > 0 ? Math.min(Math.round((it.val / it.target) * 100), 100) : 0;
+    var col = pct >= 100 ? 'var(--green)' : pct >= 70 ? 'var(--yellow)' : 'var(--red)';
+    itemsHtml += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2)">' +
+      '<div style="flex:1;font-size:.77rem;font-weight:800">' + it.lbl +
+        '<div style="font-size:.64rem;color:var(--muted);font-weight:600;margin-top:1px">' + it.val + ' / ' + it.target + '</div>' +
+        '<div style="margin-top:4px;height:5px;background:#e8e8f4;border-radius:99px;overflow:hidden"><div style="height:100%;border-radius:99px;background:' + col + ';width:' + pct + '%"></div></div>' +
+      '</div>' +
+      '<div style="font-family:\'Fredoka One\',cursive;font-size:.9rem;color:' + col + ';flex-shrink:0">' + pct + '%</div>' +
+      '</div>';
+  }
+
+  var sugsHtml = '';
+  for (var s = 0; s < sugs.length; s++) sugsHtml += '<div class="sug">' + sugs[s] + '</div>';
+
+  el.innerHTML =
+    '<div class="rhero">' +
+      '<div style="font-family:\'Fredoka One\',cursive;font-size:.8rem;opacity:.8;margin-bottom:4px">' + monthName + '</div>' +
+      '<div style="display:flex;align-items:flex-end;gap:12px">' +
+        '<div class="rscore">' + Math.round(totalPct) + '%</div>' +
+        '<div><div style="font-family:\'Fredoka One\',cursive;font-size:.85rem">' + grade + '</div>' +
+        '<div style="font-size:.67rem;opacity:.8;margin-top:1px">' + daysPassed + ' of ' + daysInMonth + ' days tracked</div></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="cf mt10">' + itemsHtml + '</div>' +
+    '<div class="cf mt10"><div style="font-family:\'Fredoka One\',cursive;font-size:.9rem;margin-bottom:6px">💡 Tips for next month</div>' + sugsHtml + '</div>';
+}
+
+// ────────────────────────────────────────
+// CALENDAR ENGINE
+// ────────────────────────────────────────
+var calStates = {};
+
+function renderCal(hdrId, gridId, year, month, statusFn) {
+  var stateKey = hdrId;
+  calStates[stateKey] = { year: year, month: month, statusFn: statusFn, hdrId: hdrId, gridId: gridId };
+
+  var hEl = document.getElementById(hdrId);
+  var gEl = document.getElementById(gridId);
+  if (!hEl || !gEl) return;
+
+  var mName = new Date(year, month, 1).toLocaleDateString('en-CA', { month:'long', year:'numeric' });
+  hEl.innerHTML =
+    '<button class="calnav" onclick="calStep(\'' + stateKey + '\',-1)">‹</button>' +
+    '<span class="calmlbl">' + mName + '</span>' +
+    '<button class="calnav" onclick="calStep(\'' + stateKey + '\',1)">›</button>';
+
+  var firstDOW = new Date(year, month, 1).getDay(); // 0=Sun
+  var offset = firstDOW === 0 ? 6 : firstDOW - 1;  // shift to Mon start
+  var dim = new Date(year, month + 1, 0).getDate();
+  var todayD = new Date(YEAR, MONTH, NOW.getDate());
+
+  var html = '';
+  var dows = ['M','T','W','T','F','S','S'];
+  for (var i = 0; i < 7; i++) html += '<div class="caldow">' + dows[i] + '</div>';
+  for (var o = 0; o < offset; o++) html += '<div class="calday c-empty"></div>';
+  for (var d = 1; d <= dim; d++) {
+    var iso = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    var dayDate = new Date(year, month, d);
+    var isFuture = dayDate > todayD;
+    var isToday  = (iso === ISO);
+    var status   = isFuture ? 'c-future' : (statusFn(iso) || '');
+    var todayCls = isToday ? ' today-c' : '';
+    html += '<div class="calday ' + status + todayCls + '">' + d + '</div>';
+  }
+  gEl.innerHTML = '<div class="calgrid">' + html + '</div>';
+}
+
+function calStep(stateKey, dir) {
+  var st = calStates[stateKey];
+  if (!st) return;
+  var m = st.month + dir;
+  var y = st.year;
+  if (m > 11) { m = 0; y++; }
+  if (m < 0)  { m = 11; y--; }
+  renderCal(st.hdrId, st.gridId, y, m, st.statusFn);
+}
+
+function renderYearGrid(type, elId) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  var months = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  var top = '<div style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px;margin-bottom:4px">';
+  for (var i = 0; i < 12; i++) top += '<div style="font-size:.5rem;font-weight:800;color:var(--muted);text-align:center">' + months[i] + '</div>';
+  top += '</div><div style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px">';
+  for (var mi = 0; mi < 12; mi++) {
+    var count = 0;
+    var dim = new Date(YEAR, mi+1, 0).getDate();
+    for (var d = 1; d <= dim; d++) {
+      var iso = YEAR + '-' + String(mi+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      var h = S.history[iso] || {};
+      if (type === 'gym'  && (h.gym  || (h.alt && h.alt.length > 0))) count++;
+      if (type === 'walk' && (h.walk || (h.alt && h.alt.indexOf('walk') >= 0))) count++;
+      if (type === 'bad'  && h.bad) count++;
+    }
+    var bg = count > 12 ? 'var(--purple)' : count > 6 ? 'rgba(124,58,237,.55)' : count > 2 ? 'rgba(124,58,237,.22)' : '#e8e8f4';
+    var col = count > 6 ? '#fff' : 'var(--muted)';
+    top += '<div style="aspect-ratio:1;border-radius:5px;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:.5rem;font-weight:800;color:' + col + '">' + (count || '') + '</div>';
+  }
+  top += '</div>';
+  el.innerHTML = top;
+}
+
+// ────────────────────────────────────────
+// OPEN MODAL CONTENT
+// ────────────────────────────────────────
+function openModal(id) {
+  var m = document.getElementById('modal-' + id);
+  if (!m) return;
+  m.classList.add('open');
+
+  if (id === 'vit-d3') {
+    renderVitStats('d3', 'd3-stats');
+    renderCal('d3-calhdr', 'd3-calgrid', YEAR, MONTH, function(iso) {
+      var h = S.history[iso] || {};
+      return h.d3 ? 'c-green' : 'c-missed';
+    });
+  }
+  if (id === 'vit-b12') {
+    renderVitStats('b12', 'b12-stats');
+    renderCal('b12-calhdr', 'b12-calgrid', YEAR, MONTH, function(iso) {
+      var h = S.history[iso] || {};
+      return h.b12 ? 'c-orange' : 'c-missed';
+    });
+  }
+  if (id === 'vit-iron') {
+    renderVitStats('iron', 'iron-stats');
+    renderCal('iron-calhdr', 'iron-calgrid', YEAR, MONTH, function(iso) {
+      var h = S.history[iso] || {};
+      return h.iron ? 'c-red' : 'c-missed';
+    });
+  }
+  if (id === 'night-cal') {
+    renderCal('night-calhdr', 'night-calgrid', YEAR, MONTH, function(iso) {
+      var h = S.history[iso] || {};
+      if (!h.nightTotal) return 'c-missed';
+      if (h.nightDone >= h.nightTotal) return 'c-done';
+      if (h.nightDone > 0) return 'c-partial';
+      return 'c-missed';
+    });
+  }
+  if (id === 'night-edit') {
+    renderNightEdit();
+  }
+  if (id === 'gym-cal') {
+    renderCal('gym-calhdr', 'gym-calgrid', YEAR, MONTH, function(iso) {
+      var h = S.history[iso] || {};
+      if (h.gym) return 'c-done';
+      if (h.alt && h.alt.length > 0) return 'c-orange';
+      return '';
+    });
+    renderYearGrid('gym', 'gym-yeargrid');
+  }
+  if (id === 'walk-cal') {
+    renderCal('walk-calhdr', 'walk-calgrid', YEAR, MONTH, function(iso) {
+      var h = S.history[iso] || {};
+      if (h.walk || (h.alt && h.alt.indexOf('walk') >= 0)) return 'c-green';
+      return '';
+    });
+    renderYearGrid('walk', 'walk-yeargrid');
+  }
+  if (id === 'bad-cal') {
+    renderCal('bad-calhdr', 'bad-calgrid', YEAR, MONTH, function(iso) {
+      var h = S.history[iso] || {};
+      return h.bad ? 'c-blue' : '';
+    });
+    renderYearGrid('bad', 'bad-yeargrid');
+  }
+  if (id === 'books') {
+    renderBookList();
+    updateBooks();
+  }
+  if (id === 'goals-ed') {
+    refreshGoalEditor();
+  }
+  if (id === 'alt-ed') {
+    renderAltEdit();
+  }
+}
+
+function closeModal(id) {
+  var m = document.getElementById('modal-' + id);
+  if (m) m.classList.remove('open');
+}
+
+// ────────────────────────────────────────
+// SHEET
+// ────────────────────────────────────────
+function openSheet(html) {
+  document.getElementById('sheetContent').innerHTML = html;
+  var ov = document.getElementById('overlay');
+  ov.style.display = 'flex';
+}
+function closeSheet() {
+  var ov = document.getElementById('overlay');
+  ov.style.display = 'none';
+  document.getElementById('sheetContent').innerHTML = '';
+}
+
+// ────────────────────────────────────────
+// WEATHER
+// ────────────────────────────────────────
+function checkWeather() {
+  if (MONTH !== 3 && MONTH !== 9) return;
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=43.70&longitude=-79.42&current_weather=true&temperature_unit=celsius')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var t = d && d.current_weather && d.current_weather.temperature;
+      if (t !== undefined && t > 10) {
+        document.getElementById('wmsg').textContent = "It's " + t + "°C outside — perfect for a walk! 🚶";
+        document.getElementById('wbanner').classList.add('show');
+      }
+    })
+    .catch(function(){});
+}
+
+// ────────────────────────────────────────
+// EXPORT / IMPORT
+// ────────────────────────────────────────
+function exportData() {
+  try {
+    var json = JSON.stringify(S, null, 2);
+    var blob = new Blob([json], { type:'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'habit-tracker-backup-' + ISO + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    showNotif('📦 Backup saved to Files!');
+  } catch(e) { showNotif('Export failed: ' + e.message); }
+}
+
+function importData(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = JSON.parse(ev.target.result);
+      if (!data.totals && !data.streak) throw new Error('Invalid backup');
+      localStorage.setItem('ht2026v7', JSON.stringify(data));
+      S = data;
+      // Reset if date mismatch
+      if (!S.today || S.today.date !== TODAY) {
+        S.today = { date:TODAY, d3:false, b12:false, iron:false, sleep:false, readToday:false };
+      }
+      if (!S.week || S.week.monISO !== WEEK_MON) {
+        S.week = JSON.parse(JSON.stringify(WEEK_DEFAULTS));
+      }
+      if (!S.nightHabits) S.nightHabits = ['brush','serum','aligners'];
+      if (!S.nightLabels) S.nightLabels = { brush:'Brush Teeth', serum:'Apply Hair Serum', aligners:'Wear Aligners' };
+      if (!S.nightIcons)  S.nightIcons  = { brush:'🦷', serum:'💆', aligners:'😁' };
+      if (!S.nightToday)  S.nightToday  = {};
+      if (!S.altActs)     S.altActs     = [];
+      init();
+      showNotif('✅ Data restored! All history imported.');
+    } catch(err) {
+      showNotif('❌ Import failed — not a valid backup file');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ────────────────────────────────────────
+// PAGE NAVIGATION
+// ────────────────────────────────────────
+function navTo(id, btn) {
+  var pages = document.querySelectorAll('.page');
+  for (var i = 0; i < pages.length; i++) pages[i].classList.remove('active');
+  var btns = document.querySelectorAll('.nb');
+  for (var j = 0; j < btns.length; j++) btns[j].classList.remove('active');
+  var pg = document.getElementById('page-' + id);
+  if (pg) {
+    pg.classList.add('active');
+    pg.scrollTop = 0;
+  }
+  if (btn) btn.classList.add('active');
+  if (id === 'stats') {
+    updateStatNums();
+    renderHeatmap();
+    renderReport();
+    renderBadges();
+  }
+  if (id === 'buddy') {
+    updateChar();
+  }
+}
+
+// ────────────────────────────────────────
+// INSTALL HINT
+// ────────────────────────────────────────
+function showInstallHint() {
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (ios && !window.navigator.standalone && !S.dismissed.install) {
+    document.getElementById('installBanner').classList.add('show');
+  }
+}
+function dismissInstall() {
+  S.dismissed.install = true;
+  saveS();
+  document.getElementById('installBanner').classList.remove('show');
+}
+
+// ────────────────────────────────────────
+// UTILS
+// ────────────────────────────────────────
+function showNotif(msg) {
+  var el = document.getElementById('notif');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){ el.classList.remove('show'); }, 2800);
+}
+
+function confetti() {
+  var cols = ['#ec4899','#a78bfa','#60a5fa','#34d399','#fbbf24','#f97316','#f87171'];
+  for (var i = 0; i < 50; i++) {
+    (function(idx) {
+      setTimeout(function() {
+        var p = document.createElement('div');
+        p.className = 'cp';
+        p.style.cssText =
+          'left:' + Math.random()*100 + 'vw;' +
+          'background:' + cols[Math.floor(Math.random()*cols.length)] + ';' +
+          'animation-duration:' + (1.4+Math.random()*1.2) + 's;' +
+          'animation-delay:' + (Math.random()*.4) + 's;' +
+          'width:' + (6+Math.random()*7) + 'px;' +
+          'height:' + (6+Math.random()*7) + 'px;' +
+          'border-radius:' + (Math.random()>.5?'50%':'3px');
+        document.body.appendChild(p);
+        setTimeout(function(){ if(p.parentNode) p.parentNode.removeChild(p); }, 3400);
+      }, idx * 22);
+    })(i);
+  }
+}
+
+// String padding polyfill
+if (!String.prototype.padStart) {
+  String.prototype.padStart = function(n, c) {
+    var s = String(this);
+    while (s.length < n) s = (c||' ') + s;
+    return s;
+  };
+}
+
+// ────────────────────────────────────────
+// START
+// ────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
